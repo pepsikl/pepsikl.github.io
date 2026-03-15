@@ -8,39 +8,28 @@
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --border: #eee; }
         [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; }
-        
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: var(--card); border-radius: 18px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; position: relative; }
-        
         .card.active-normal { border-color: var(--orange); }
         .card.active-prepay { border-color: var(--green); }
         .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; }
         .card.active-over { border-color: #000; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
         .timer-display { font-size: 2.2rem; font-family: monospace; font-weight: bold; margin: 10px 0; }
         .color-orange { color: var(--orange); } .color-green { color: var(--green); } .color-red { color: var(--red); }
-        
         .cost-info { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
         .btn { border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
         .btn-main { background: var(--primary); color: white; }
         .btn-danger { background: var(--red); color: white; }
-        
         #adminArea, #memberArea { display: none; }
         #welcomeArea { text-align: center; padding: 50px 20px; }
-        
         #customerView { display: none; text-align: center; }
         .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         td, th { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
-        
-        /* 云端同步提示 */
         #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
-        .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; line-height: 1; }
-        .del-btn:hover { color: var(--red); }
+        .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; z-index: 10; }
     </style>
 </head>
 <body data-theme="light">
@@ -92,7 +81,6 @@
 </div>
 
 <script>
-    // --- 配置与同步设置 ---
     const BIN_ID = 'be0977dbf4d2692aa868';
     const API_URL = `https://api.npoint.io/${BIN_ID}`;
     const MASTER_PASS = '8888';
@@ -101,12 +89,12 @@
     let tables = [];
     let members = {};
     let currentTheme = localStorage.getItem('tp_theme') || 'light';
-    document.body.setAttribute('data-theme', currentTheme);
+    let isEditing = false; 
 
     const tidx = new URLSearchParams(window.location.search).get('t');
 
-    // --- 云端数据交互 ---
     async function cloudFetch() {
+        if (isEditing) return; 
         showLoading(true);
         try {
             const res = await fetch(API_URL);
@@ -128,15 +116,12 @@
                 body: JSON.stringify({ tables, members })
             });
             localStorage.setItem('tp_theme', currentTheme);
-        } catch (e) { alert("同步失败，请检查网络"); }
+        } catch (e) { alert("同步失败"); }
         showLoading(false);
     }
 
-    function showLoading(show) {
-        document.getElementById('syncStatus').style.display = show ? 'block' : 'none';
-    }
+    function showLoading(show) { document.getElementById('syncStatus').style.display = show ? 'block' : 'none'; }
 
-    // --- 核心初始化 ---
     async function init() {
         await cloudFetch();
         if (tidx !== null) {
@@ -148,38 +133,33 @@
         } else {
             document.getElementById('welcomeArea').style.display = 'block';
         }
-        setInterval(cloudFetch, 60000); // 每分钟拉取一次
+        setInterval(cloudFetch, 60000);
     }
 
     function showAdmin() {
         document.getElementById('welcomeArea').style.display = 'none';
         document.getElementById('adminArea').style.display = 'block';
         document.getElementById('memberArea').style.display = 'block';
-        render(); 
-        renderMembers();
-        setInterval(render, 1000);
+        render(); renderMembers();
+        setInterval(() => { if (!isEditing) render(); }, 1000); 
     }
 
     function adminLogin() {
-        const p = prompt("请输入店长管理密码:");
-        if (p === MASTER_PASS) {
-            isAdmin = true;
-            sessionStorage.setItem('isLoggedIn', 'true');
-            showAdmin();
-        } else if (p !== null) alert("密码错误！");
+        const p = prompt("店长密码:");
+        if (p === MASTER_PASS) { isAdmin = true; sessionStorage.setItem('isLoggedIn', 'true'); showAdmin(); }
+        else if (p !== null) alert("密码错误！");
     }
 
     function logout() { sessionStorage.removeItem('isLoggedIn'); location.reload(); }
 
     function checkAuth(callback) {
         if (!isAdmin) {
-            const p = prompt("敏感操作需验证店长密码:");
+            const p = prompt("验证店长密码:");
             if (p === MASTER_PASS) callback();
             else if (p !== null) alert("权限不足！");
         } else callback();
     }
 
-    // --- 计费核心 ---
     function msToT(ms) {
         let s = Math.floor(ms / 1000);
         return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -202,9 +182,8 @@
         }
     }
 
-    // --- 界面渲染 ---
     function render() {
-        if (!isAdmin || tidx !== null) return;
+        if (!isAdmin || tidx !== null || isEditing) return; 
         const grid = document.getElementById('tablesGrid');
         const baseUrl = window.location.href.split('?')[0];
         let html = '';
@@ -215,11 +194,19 @@
                     <span class="del-btn" onclick="deleteTable(${i})">×</span>
                     <div style="font-size:9px; color:#999; margin-bottom:5px;">${baseUrl}?t=${i}</div>
                     <input style="border:none; background:transparent; font-weight:bold; font-size:1.1rem; color:var(--text); width:80%;" 
-                           value="${t.name}" onchange="tables[${i}].name=this.value;save()">
+                           value="${t.name}" 
+                           onfocus="isEditing=true" 
+                           onblur="isEditing=false; tables[${i}].name=this.value; save()"
+                           oninput="tables[${i}].name=this.value"
+                           onchange="save()">
                     <div class="timer-display ${res.color}">${res.time}</div>
                     <div class="cost-info">费用: ￥${res.cost}</div>
                     <div style="margin-bottom:10px; font-size:0.9rem;">
-                        价格: <input type="number" style="width:45px" value="${t.price}" onchange="tables[${i}].price=this.value;save()"> 元/h
+                        价格: <input type="number" style="width:45px" value="${t.price}" 
+                                   onfocus="isEditing=true" 
+                                   onblur="isEditing=false; tables[${i}].price=this.value; save()"
+                                   oninput="tables[${i}].price=this.value"
+                                   onchange="save()"> 元/h
                     </div>
                     ${!t.startTime ? 
                         `<button class="btn btn-main" onclick="start(${i}, 'normal')">计时</button> 
@@ -241,58 +228,15 @@
         document.getElementById('cust-status').style.color = res.color === 'color-red' ? 'red' : 'var(--primary)';
     }
 
-    // --- 业务操作 ---
     function start(i, mode, ms = 0) { tables[i].startTime = Date.now(); tables[i].mode = mode; tables[i].limitMs = ms; save(); render(); }
-    function askPrepay(i) { const min = prompt("请输入预付分钟数:", "60"); if (min) start(i, 'prepay', min * 60000); }
-    
-    function askCheckout(i) {
-        checkAuth(() => {
-            const res = calculate(tables[i]);
-            const acc = prompt(`应收金额: ￥${res.cost}\n请输入扣费会员账号 (如无则直接确定下机):`);
-            if (acc && members[acc]) {
-                members[acc].balance -= parseFloat(res.cost);
-                alert(`扣费成功！会员 ${members[acc].name} 剩余余额: ￥${members[acc].balance.toFixed(2)}`);
-            }
-            tables[i].startTime = null;
-            save(); render(); renderMembers();
-        });
-    }
-
-    function addTable() {
-        checkAuth(() => {
-            tables.push({name: (tables.length+1)+'号桌', startTime: null, price: 15, mode: 'normal', limitMs: 0});
-            save(); render();
-        });
-    }
-
-    function deleteTable(i) {
-        checkAuth(() => {
-            if (tables[i].startTime) return alert("该桌计费中，无法删除！");
-            if (confirm(`确定要删除 [${tables[i].name}] 吗？`)) {
-                tables.splice(i, 1);
-                save(); render();
-            }
-        });
-    }
-
-    function addMember() {
-        const acc = document.getElementById('mAcc').value; if (!acc) return;
-        members[acc] = { name: document.getElementById('mName').value || '匿名顾客', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) };
-        save(); renderMembers(); alert("已同步云端！");
-    }
-
-    function renderMembers() {
-        let html = '';
-        for (let a in members) {
-            html += `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td>
-            <td><button class="btn" onclick="checkAuth(()=>deleteMember('${a}'))">删</button></td></tr>`;
-        }
-        document.getElementById('memberList').innerHTML = html;
-    }
-
+    function askPrepay(i) { const min = prompt("预付分钟数:", "60"); if (min) start(i, 'prepay', min * 60000); }
+    function askCheckout(i) { checkAuth(() => { const res = calculate(tables[i]); const acc = prompt(`应收: ￥${res.cost}\n扣款会员账号:`); if (acc && members[acc]) { members[acc].balance -= parseFloat(res.cost); alert(`成功！余: ￥${members[acc].balance.toFixed(2)}`); } tables[i].startTime = null; save(); render(); renderMembers(); }); }
+    function addTable() { checkAuth(() => { tables.push({name: (tables.length+1)+'号桌', startTime: null, price: 15, mode: 'normal', limitMs: 0}); save(); render(); }); }
+    function deleteTable(i) { checkAuth(() => { if (tables[i].startTime) return alert("计费中！"); if (confirm(`删除 [${tables[i].name}]？`)) { tables.splice(i, 1); save(); render(); } }); }
+    function addMember() { const acc = document.getElementById('mAcc').value; if (!acc) return; members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); }
+    function renderMembers() { let html = ''; for (let a in members) { html += `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" onclick="checkAuth(()=>deleteMember('${a}'))">删</button></td></tr>`; } document.getElementById('memberList').innerHTML = html; }
     function deleteMember(a) { if(confirm(`删除会员 ${a}？`)) { delete members[a]; save(); renderMembers(); } }
     function toggleTheme() { currentTheme = currentTheme === 'light' ? 'dark' : 'light'; document.body.setAttribute('data-theme', currentTheme); save(); }
-
     init();
 </script>
 </body>
