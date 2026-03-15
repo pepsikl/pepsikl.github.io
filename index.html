@@ -201,9 +201,13 @@
         setInterval(() => { if (!isEditing) render(); }, 1000); 
     }
 
-    function adminLogin() {
+   function adminLogin() {
         const p = prompt("店长密码:");
-        if (p === MASTER_PASS) { isAdmin = true; sessionStorage.setItem('isLoggedIn') === 'true'; showAdmin(); }
+        if (p === MASTER_PASS) { 
+            isAdmin = true; 
+            sessionStorage.setItem('isLoggedIn', 'true'); // 修复点：这里应该是赋值，不是判断
+            showAdmin(); 
+        }
         else if (p !== null) alert("密码错误！");
     }
 
