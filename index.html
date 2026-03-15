@@ -64,7 +64,7 @@
     <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1)">
         <h2 id="cust-name">-</h2>
         <div id="cust-timer" class="timer-display">00:00:00</div>
-        <div id="cust-cost" class="cost-info">需支付: ￥0.00</div>
+        <div id="cust-cost" class="cost-info">费用: ￥0.00</div>
         <p id="cust-status" style="font-weight: bold;"></p>
         <button class="refresh-btn" onclick="location.reload()">🔄 刷新当前状态</button>
     </div>
@@ -90,6 +90,7 @@
     let members = {};
     let currentTheme = localStorage.getItem('tp_theme') || 'light';
     let isEditing = false; 
+    let localTimestamp = 0; // 【修复并发】记录本地数据的最后同步时间戳
 
     const tidx = new URLSearchParams(window.location.search).get('t');
 
@@ -97,12 +98,19 @@
         if (isEditing) return; 
         showLoading(true);
         try {
-            const res = await fetch(API_URL);
+            // 加入随机参数 cache 防止浏览器拿到旧的缓存数据
+            const res = await fetch(API_URL + "?nocache=" + Date.now());
             const data = await res.json();
-            tables = data.tables || [];
-            members = data.members || {};
-            render();
-            renderMembers();
+            
+            // 【修复并发核心逻辑】
+            // 只有当云端的时间戳比本地更新时，或者本地还没数据时，才覆盖本地变量
+            if (!data.lastUpdated || data.lastUpdated > localTimestamp) {
+                tables = data.tables || [];
+                members = data.members || {};
+                localTimestamp = data.lastUpdated || 0;
+                render();
+                renderMembers();
+            }
         } catch (e) { console.error("读取失败"); }
         showLoading(false);
     }
@@ -110,10 +118,25 @@
     async function save() {
         showLoading(true);
         try {
+            // 1. 先去云端探一下，防止在点按钮的一瞬间别人先存了
+            const checkRes = await fetch(API_URL + "?check=" + Date.now());
+            const checkData = await checkRes.json();
+            if (checkData.lastUpdated > localTimestamp) {
+                console.log("并发冲突：检测到更新，正在合并新数据...");
+                tables = checkData.tables || [];
+                members = checkData.members || {};
+            }
+
+            // 2. 更新本地戳并上传全量数据
+            localTimestamp = Date.now();
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tables, members })
+                body: JSON.stringify({ 
+                    tables, 
+                    members, 
+                    lastUpdated: localTimestamp // 将时间戳存入云端
+                })
             });
             localStorage.setItem('tp_theme', currentTheme);
         } catch (e) { alert("同步失败"); }
@@ -128,12 +151,14 @@
             document.getElementById('welcomeArea').style.display = 'none';
             document.getElementById('customerView').style.display = 'block';
             setInterval(updateCustomer, 1000);
+            setInterval(cloudFetch, 10000); // 顾客端每10秒刷一次云端
         } else if (isAdmin) {
             showAdmin();
         } else {
             document.getElementById('welcomeArea').style.display = 'block';
         }
-        setInterval(cloudFetch, 60000);
+        // 管理端每10秒自动从云端同步一次，防止多设备数据不统一
+        setInterval(() => { if(isAdmin) cloudFetch(); }, 10000); 
     }
 
     function showAdmin() {
@@ -174,11 +199,11 @@
             return { time: msToT(elapsed), cost, color: "color-orange", status: "正在计费", css: "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
-            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预付时长内", css: "active-prepay" };
+            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预付运行中", css: "active-prepay" };
             let over = Math.abs(remain);
-            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 即将超时", css: "active-warn" };
+            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: "active-warn" };
             let cost = ((over - buffer) / 3600000 * t.price).toFixed(2);
-            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "已超时", css: "active-over" };
+            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "超时计费中", css: "active-over" };
         }
     }
 
