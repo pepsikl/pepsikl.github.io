@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>躺平电玩计费管理系统</title>
+    <title>躺平电玩智能台卡计费管理</title>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --border: #eee; }
         [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
@@ -264,19 +264,19 @@
     }
 
     function calculate(t) {
-        if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "待机", css: "" };
+        if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "空闲中", css: "" };
         const elapsed = Date.now() - t.startTime;
         const buffer = 60000;
         if (t.mode === 'normal') {
             let cost = (elapsed / 3600000 * t.price).toFixed(2);
-            return { time: msToT(elapsed), cost, color: "color-orange", status: "正在计费", css: "active-normal" };
+            return { time: msToT(elapsed), cost, color: "color-orange", status: "计费中", css: "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
-            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预付运行中", css: "active-prepay" };
+            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预结时间内", css: "active-prepay" };
             let over = Math.abs(remain);
-            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: "active-warn" };
+            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 即将超时", css: "active-warn" };
             let cost = ((over - buffer) / 3600000 * t.price).toFixed(2);
-            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "超时计费中", css: "active-over" };
+            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "计费中", css: "active-over" };
         }
     }
 
@@ -311,7 +311,7 @@
         document.getElementById('cust-name').innerText = t.name;
         document.getElementById('cust-timer').innerText = res.time;
         document.getElementById('cust-timer').className = "timer-display " + res.color;
-        document.getElementById('cust-cost').innerText = "当前费用: ￥" + res.cost;
+        document.getElementById('cust-cost').innerText = "待支付: ￥" + res.cost;
         document.getElementById('cust-status').innerText = res.status;
         document.getElementById('cust-status').style.color = res.color === 'color-red' ? 'red' : 'var(--primary)';
     }
