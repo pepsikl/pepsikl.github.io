@@ -26,16 +26,18 @@
         #welcomeArea { text-align: center; padding: 50px 20px; }
         #customerView { display: none; text-align: center; position: relative; }
         .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
+        .call-btn { background: #ff4757; color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 4px 10px rgba(255,71,87,0.3); }
+        #callNotify { position: fixed; top: 0; left: 0; right: 0; background: #ff4757; color: white; padding: 10px; text-align: center; z-index: 20000; font-weight: bold; display: none; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         td, th { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
         #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
         .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; z-index: 10; }
-        /* 顾客端专用主题切换按钮 */
         .cust-theme-btn { position: absolute; top: -10px; right: 0; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 10px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body data-theme="light">
 
+<div id="callNotify" onclick="clearCalls()">🚨 <span id="callMsg"></span> (处理完成点击消除)</div>
 <div id="syncStatus">📡 同步中...</div>
 
 <div id="adminArea">
@@ -70,6 +72,7 @@
         <div id="cust-cost" class="cost-info">费用: ￥0.00</div>
         <p id="cust-status" style="font-weight: bold;"></p>
         <button class="refresh-btn" onclick="location.reload()">🔄 刷新当前状态</button>
+        <button class="call-btn" onclick="callService()">🔔 呼叫店员</button>
     </div>
 </div>
 
@@ -86,14 +89,16 @@
 <script>
     const BIN_ID = 'be0977dbf4d2692aa868';
     const API_URL = `https://api.npoint.io/${BIN_ID}`;
-    const MASTER_PASS = '343434';
+    const MASTER_PASS = '8888';
     
     let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
     let tables = [];
     let members = {};
+    let calls = []; 
     let currentTheme = localStorage.getItem('tp_theme') || 'light';
     let isEditing = false; 
     let localTimestamp = 0;
+    let lastCallCount = 0; 
 
     const tidx = new URLSearchParams(window.location.search).get('t');
 
@@ -106,9 +111,11 @@
             if (!data.lastUpdated || data.lastUpdated > localTimestamp) {
                 tables = data.tables || [];
                 members = data.members || {};
+                calls = data.calls || [];
                 localTimestamp = data.lastUpdated || 0;
                 render();
                 renderMembers();
+                checkNewCalls();
             }
         } catch (e) { console.error("读取失败"); }
         showLoading(false);
@@ -122,34 +129,68 @@
             if (checkData.lastUpdated > localTimestamp) {
                 tables = checkData.tables || [];
                 members = checkData.members || {};
+                calls = checkData.calls || [];
             }
             localTimestamp = Date.now();
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tables, members, lastUpdated: localTimestamp })
+                body: JSON.stringify({ tables, members, calls, lastUpdated: localTimestamp })
             });
             localStorage.setItem('tp_theme', currentTheme);
         } catch (e) { alert("同步失败"); }
         showLoading(false);
     }
 
+    function checkNewCalls() {
+        if (!isAdmin || tidx !== null) return;
+        if (calls.length > 0) {
+            const latest = calls[calls.length - 1];
+            document.getElementById('callNotify').style.display = 'block';
+            document.getElementById('callMsg').innerText = `${latest.tableName} 正在呼叫服务！`;
+            
+            if (calls.length > lastCallCount) {
+                // 修改后的自定义播报词
+                const utterance = new SpeechSynthesisUtterance(`叮咚！${latest.tableName}在召唤你`);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 1.1; // 语速稍微快一点点，听起来更清爽
+                window.speechSynthesis.speak(utterance);
+            }
+        } else {
+            document.getElementById('callNotify').style.display = 'none';
+        }
+        lastCallCount = calls.length;
+    }
+
+    function clearCalls() {
+        calls = [];
+        save();
+        document.getElementById('callNotify').style.display = 'none';
+    }
+
+    function callService() {
+        if (tidx === null) return;
+        const tableName = tables[tidx] ? tables[tidx].name : "未知桌位";
+        calls.push({ tableName, time: Date.now() });
+        save();
+        alert("已发送呼叫，店员马上就来！");
+    }
+
     function showLoading(show) { document.getElementById('syncStatus').style.display = show ? 'block' : 'none'; }
 
     async function init() {
-        document.body.setAttribute('data-theme', currentTheme); // 初始化主题
+        document.body.setAttribute('data-theme', currentTheme);
         await cloudFetch();
         if (tidx !== null) {
             document.getElementById('welcomeArea').style.display = 'none';
             document.getElementById('customerView').style.display = 'block';
             setInterval(updateCustomer, 1000);
-            setInterval(cloudFetch, 10000);
         } else if (isAdmin) {
             showAdmin();
         } else {
             document.getElementById('welcomeArea').style.display = 'block';
         }
-        setInterval(() => { if(isAdmin) cloudFetch(); }, 10000); 
+        setInterval(() => { cloudFetch(); }, 10000); 
     }
 
     function showAdmin() {
@@ -162,7 +203,7 @@
 
     function adminLogin() {
         const p = prompt("店长密码:");
-        if (p === MASTER_PASS) { isAdmin = true; sessionStorage.setItem('isLoggedIn', 'true'); showAdmin(); }
+        if (p === MASTER_PASS) { isAdmin = true; sessionStorage.setItem('isLoggedIn') === 'true'; showAdmin(); }
         else if (p !== null) alert("密码错误！");
     }
 
@@ -190,11 +231,11 @@
             return { time: msToT(elapsed), cost, color: "color-orange", status: "正在计费", css: "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
-            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预结计时中", css: "active-prepay" };
+            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预付运行中", css: "active-prepay" };
             let over = Math.abs(remain);
-            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 即将超时", css: "active-warn" };
+            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: "active-warn" };
             let cost = ((over - buffer) / 3600000 * t.price).toFixed(2);
-            return { time: "已超时 " + msToT(over - buffer), cost, color: "color-red", status: "超时计费中", css: "active-over" };
+            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "超时计费中", css: "active-over" };
         }
     }
 
@@ -237,27 +278,16 @@
     function start(i, mode, ms = 0) { tables[i].startTime = Date.now(); tables[i].mode = mode; tables[i].limitMs = ms; save(); render(); }
     function askPrepay(i) { const min = prompt("预付分钟数:", "60"); if (min) start(i, 'prepay', min * 60000); }
     
-    // 【修改核心：点击取消不停止计时】
     function askCheckout(i) { 
         checkAuth(() => { 
             const res = calculate(tables[i]); 
-            const acc = prompt(`[${tables[i].name}] 正在结账\n应收: ￥${res.cost}\n请输入扣款会员账号 (不输入则手动收现):`, ""); 
-            
-            // 如果用户点击了“取消”，acc 的值为 null，此时直接 return，不做任何操作
+            const acc = prompt(`[${tables[i].name}] 正在结账\n应收: ￥${res.cost}\n请输入扣款会员账号 (空为现金):`, ""); 
             if (acc === null) return; 
-
-            // 如果点击确定（无论输没输账号），都会继续往下走清除计费
             if (acc !== "" && members[acc]) { 
                 members[acc].balance -= parseFloat(res.cost); 
                 alert(`扣款成功！会员余额: ￥${members[acc].balance.toFixed(2)}`); 
-            } else if (acc !== "") {
-                alert("未找到该会员账号，已记录为现金结账。");
             }
-
-            tables[i].startTime = null; 
-            save(); 
-            render(); 
-            renderMembers(); 
+            tables[i].startTime = null; save(); render(); renderMembers(); 
         }); 
     }
 
