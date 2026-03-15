@@ -3,119 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>躺平电玩云计费系统</title>
+    <title>躺平电玩 - 专业计费系统</title>
     <style>
-        :root { --bg: #f4f7f6; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --border: #eee; }
-        [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; transition: 0.3s; }
+        :root { --bg: #f4f7f6; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; }
+        [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 4px solid transparent; text-align: center; position: relative; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 3px solid transparent; transition: 0.3s; position: relative; }
-        
-        /* 状态样式 */
+        /* 状态颜色 */
         .active-normal { border-color: var(--orange); }
         .active-prepay { border-color: var(--green); }
-        .active-warn { border-color: var(--red); animation: pulse 1s infinite; }
+        .active-warn { border-color: var(--red); animation: blink 1s infinite; }
         .active-over { border-color: #000; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .timer-display { font-size: 2.4rem; font-family: 'Courier New', monospace; font-weight: bold; margin: 10px 0; }
-        .color-orange { color: var(--orange); } .color-green { color: var(--green); } .color-red { color: var(--red); }
-        
-        .cost-info { font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; }
-        .btn { border: none; padding: 12px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
+        .name-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .edit-icon { font-size: 0.9rem; cursor: pointer; opacity: 0.5; }
+        .timer { font-size: 3rem; font-family: monospace; font-weight: bold; margin: 15px 0; line-height: 1; }
+        .price-tag { font-size: 0.9rem; background: #eee; color: #666; padding: 2px 8px; border-radius: 5px; }
+        .btn { border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 1rem; }
         .btn-main { background: var(--primary); color: white; }
         .btn-danger { background: var(--red); color: white; }
+        .btn-ghost { background: #eee; color: #666; }
         
-        #loading { position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.8); display:flex; justify-content:center; align-items:center; z-index:999; font-weight:bold; }
-        .admin-badge { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; background: #eee; padding: 2px 6px; border-radius: 4px; }
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; display:flex; justify-content:center; align-items:center; font-weight:bold; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div id="loading">📡 云端同步中...</div>
+<div id="loading">📡 正在同步云端数据...</div>
 
 <div class="header">
-    <h2 style="margin:0;">🎮 躺平电玩</h2>
-    <div style="display: flex; gap: 10px;">
-        <button onclick="toggleTheme()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">🌓</button>
-        <button id="adminBtn" onclick="adminAuth()" class="btn-main" style="width:auto; padding:5px 15px; font-size:0.8rem;">管理入口</button>
-    </div>
+    <h1 style="margin:0; font-size: 1.5rem;">🎮 躺平电玩</h1>
+    <button id="adminBtn" onclick="adminAuth()" class="btn-ghost" style="width:auto; padding:8px 15px;">店长模式</button>
 </div>
 
-<div class="grid" id="mainGrid"></div>
+<div id="mainGrid" class="grid"></div>
 
 <script>
-    const BIN_ID = 'be0977dbf4d2692aa868'; 
+    const BIN_ID = 'be0977dbf4d2692aa868';
     const API_URL = `https://api.npoint.io/${BIN_ID}`;
-    const MASTER_PASS = '8888'; // 【修改你的店长密码】
+    const MASTER_PASS = '8888';
     
     let tables = [];
     let isAdmin = sessionStorage.getItem('isTPAdmin') === 'true';
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTableIndex = urlParams.get('t'); // 获取 ?t=1 里的参数
 
-    // 初始化：从云端拉取数据
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
             tables = data.tables;
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             render();
-        } catch (e) {
-            alert('云端连接失败，请检查网络或ID是否正确');
-        }
+        } catch (e) { alert("云端读取失败"); }
     }
 
-    // 更新云端数据
-    async function updateCloud() {
-        document.getElementById('loading').style.display = 'flex';
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tables })
-            });
-            document.getElementById('loading').style.display = 'none';
-            render();
-        } catch (e) {
-            alert('同步失败，请重试');
-        }
+    async function sync() {
+        document.getElementById('loading').classList.remove('hidden');
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tables })
+        });
+        document.getElementById('loading').classList.add('hidden');
+        render();
     }
 
     function render() {
         const grid = document.getElementById('mainGrid');
-        if (isAdmin) document.getElementById('adminBtn').innerText = '退出管理';
+        let displayList = tables;
         
-        grid.innerHTML = tables.map((t, i) => {
+        // 单页面模式过滤
+        if (targetTableIndex !== null) {
+            const idx = parseInt(targetTableIndex) - 1;
+            displayList = tables[idx] ? [tables[idx]] : tables;
+        }
+
+        grid.innerHTML = displayList.map((t) => {
+            const realIdx = tables.indexOf(t);
             const res = calculate(t);
             return `
                 <div class="card ${res.css}">
-                    ${isAdmin ? '<span class="admin-badge">店长模式</span>' : ''}
-                    <h3 style="margin-top:0;">${t.name}</h3>
-                    <div class="timer-display ${res.color}">${res.time}</div>
-                    <div class="cost-info">费用: ￥${res.cost}</div>
+                    <div class="name-row">
+                        <h2 style="margin:0;">${t.name}</h2>
+                        ${isAdmin ? `<span class="edit-icon" onclick="editTable(${realIdx})">✏️</span>` : ''}
+                    </div>
+                    <div class="price-tag">单价: ${t.price}元/h</div>
+                    <div class="timer ${res.color}">${res.time}</div>
+                    <div style="font-weight:bold; margin-bottom:15px;">当前费用: <span style="font-size:1.4rem;">￥${res.cost}</span></div>
                     
                     ${isAdmin ? (
                         !t.startTime ? 
-                        `<button class="btn btn-main" onclick="start(${i}, 'normal')">开始计时</button>
-                         <button class="btn btn-main" onclick="askPrepay(${i})">预付模式</button>` :
-                        `<button class="btn btn-danger" onclick="checkout(${i})">结账下机</button>`
-                    ) : '<p style="color:#999;font-size:0.9rem;">数据每分钟自动刷新一次</p>'}
+                        `<button class="btn btn-main" onclick="start(${realIdx}, 'normal')">普通计时开始</button>
+                         <button class="btn btn-main" onclick="askPrepay(${realIdx})">预付模式开始</button>` :
+                        `<button class="btn btn-danger" onclick="checkout(${realIdx})">结账并清零</button>`
+                    ) : `<p style="color:#999;font-size:0.8rem;">每分钟自动刷新 • 请核对桌号</p>`}
                 </div>
             `;
         }).join('');
+        document.getElementById('adminBtn').innerText = isAdmin ? '退出店长模式' : '店长模式';
     }
 
     function calculate(t) {
         if (!t.startTime || t.startTime === 0) return { time: "00:00:00", cost: "0.00", color: "", css: "" };
         const elapsed = Date.now() - t.startTime;
         const buffer = 60000;
+        const p = t.price || 15;
 
         if (t.mode === 'normal') {
-            let cost = (elapsed / 3600000 * t.price).toFixed(2);
-            return { time: msToT(elapsed), cost: cost, color: "color-orange", css: "active-normal" };
+            let cost = (elapsed / 3600000 * p).toFixed(2);
+            return { time: msToT(elapsed), cost, color: "color-orange", css: "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
             if (remain > 0) {
@@ -125,8 +127,8 @@
                 if (over < buffer) {
                     return { time: msToT(buffer - over), cost: "0.00", color: "color-red", css: "active-warn" };
                 } else {
-                    let cost = ((over - buffer) / 3600000 * t.price).toFixed(2);
-                    return { time: "超时 " + msToT(over - buffer), cost: cost, color: "color-red", css: "active-over" };
+                    let cost = ((over - buffer) / 3600000 * p).toFixed(2);
+                    return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", css: "active-over" };
                 }
             }
         }
@@ -137,51 +139,46 @@
         return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
     }
 
-    // --- 操作函数 ---
+    // --- 店长功能 ---
     function adminAuth() {
-        if (isAdmin) {
-            sessionStorage.removeItem('isTPAdmin');
-            isAdmin = false;
-            location.reload();
-            return;
-        }
-        const p = prompt("请输入店长密码:");
-        if (p === MASTER_PASS) {
+        if (isAdmin) { sessionStorage.removeItem('isTPAdmin'); location.reload(); return; }
+        if (prompt("请输入店长密码:") === MASTER_PASS) {
             isAdmin = true;
             sessionStorage.setItem('isTPAdmin', 'true');
             render();
-        } else if(p) alert("密码错误");
+        }
+    }
+
+    function editTable(i) {
+        const newName = prompt("修改桌位名称:", tables[i].name);
+        const newPrice = prompt("修改每小时单价 (元):", tables[i].price);
+        if (newName) tables[i].name = newName;
+        if (newPrice) tables[i].price = parseFloat(newPrice);
+        sync();
     }
 
     function start(i, mode, ms = 0) {
         tables[i].startTime = Date.now();
         tables[i].mode = mode;
         tables[i].limitMs = ms;
-        updateCloud();
+        sync();
     }
 
     function askPrepay(i) {
-        const min = prompt("预付分钟数:", "60");
+        const min = prompt("预付时长（分钟）:", "60");
         if (min) start(i, 'prepay', min * 60000);
     }
 
     function checkout(i) {
-        const res = calculate(tables[i]);
-        if (confirm(`桌位：${tables[i].name}\n应收：￥${res.cost}\n确定结账下机吗？`)) {
+        if (confirm("确定结账下机吗？数据将清零并同步至云端。")) {
             tables[i].startTime = 0;
-            updateCloud();
+            sync();
         }
     }
 
-    function toggleTheme() {
-        const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', theme);
-    }
-
-    // 启动
     fetchData();
-    setInterval(render, 1000); // 每一秒刷新本地画面
-    setInterval(fetchData, 60000); // 每分钟自动从云端同步一次，防止多端数据不同步
+    setInterval(render, 1000);
+    setInterval(fetchData, 60000); 
 </script>
 </body>
 </html>
