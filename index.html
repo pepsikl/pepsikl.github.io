@@ -1,395 +1,304 @@
-
-
 <!DOCTYPE html>
-<html lang="zh-CN" data-default-color-scheme=auto>
-
-
-
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#996633">
-  <meta name="author" content="Czx">
-  <meta name="keywords" content="">
-  
-    <meta property="og:type" content="website">
-<meta property="og:title" content="C&#39;Space">
-<meta property="og:url" content="http://example.com/index.html">
-<meta property="og:site_name" content="C&#39;Space">
-<meta property="og:locale" content="zh_CN">
-<meta property="article:author" content="Czx">
-<meta name="twitter:card" content="summary_large_image">
-  
-  
-    <meta name="referrer" content="no-referrer-when-downgrade">
-  
-  
-  <title>C&#39;Space</title>
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
-
-
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
-  
-
-
-
-
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"/","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-
-  
-<meta name="generator" content="Hexo 6.3.0"></head>
-
-
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 100vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>No.7</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>躺平电玩计费管理系统</title>
+    <style>
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --border: #eee; }
+        [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; }
         
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                首页
-              </a>
-            </li>
-          
+        /* 布局控制 */
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border-radius: 18px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; position: relative; }
         
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                关于
-              </a>
-            </li>
-          
+        /* 状态样式 */
+        .card.active-normal { border-color: var(--orange); }
+        .card.active-prepay { border-color: var(--green); }
+        .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; }
+        .card.active-over { border-color: #000; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .timer-display { font-size: 2.2rem; font-family: monospace; font-weight: bold; margin: 10px 0; }
+        .color-orange { color: var(--orange); } .color-green { color: var(--green); } .color-red { color: var(--red); }
         
+        .cost-info { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+        .btn { border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:active { transform: scale(0.95); }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-danger { background: var(--red); color: white; }
         
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
+        /* 模式展示控制 */
+        #adminArea, #memberArea { display: none; }
+        #welcomeArea { text-align: center; padding: 50px 20px; }
         
+        /* 顾客端专用 */
+        #customerView { display: none; text-align: center; }
+        .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
         
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
-    </div>
-  </div>
-</nav>
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        td, th { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    </style>
+</head>
+<body data-theme="light">
 
-  
-
-<div id="banner" class="banner" parallax=true
-     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="An elegant Material-Design theme for Hexo"></span>
-          
-        </div>
-
-        
-      </div>
-
-      
-        <div class="scroll-down-bar">
-          <i class="iconfont icon-arrowdown"></i>
-        </div>
-      
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      <div class="container nopadding-x-md">
-        <div id="board"
-          style="margin-top: 0">
-          
-          <div class="container">
-            <div class="row">
-              <div class="col-12 col-md-10 m-auto">
-                
-
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/09/21/hitokoto/" target="_self">
-          为网站添加&#34;一言&#34;
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/09/21/hitokoto/" target="_self">
+<div id="adminArea">
+    <div class="header">
+        <h1>🎮 躺平电玩后台</h1>
         <div>
-          简单来说，一言指的就是一句话，可以是动漫中的台词，也可以是网络上的各种小段子。 或是感动，或是开心，有或是单纯的回忆。来到这里，留下你所喜欢的那一句句话，与大家分享，这就是一言存在的目的。 请求地址v1.hitokoto.cn	HTTPS	Any	3.5	全球 请求参数详见https://developer.hitokoto.cn/sentence/#请求参数 快速开始 api:      ena
+            <button class="btn" onclick="toggleTheme()">🌓 主题</button>
+            <button class="btn btn-danger" onclick="logout()">退出登录</button>
         </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-09-21 22:08" pubdate>
-              2022-09-21
-            </time>
-          </div>
-        
-        
-        
-      </div>
-    </article>
-  </div>
-
-
-
-
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
     </div>
-  </div>
-</div>
+    <div class="grid" id="tablesGrid"></div>
+    <div style="text-align:center; margin:30px;"><button class="btn btn-main" onclick="addTable()">＋ 新增桌位</button></div>
 
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span></span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span></span></a> 
+    <div id="memberArea" style="background:var(--card); padding:20px; border-radius:15px; margin-top:30px;">
+        <h3>👤 会员系统</h3>
+        <input type="text" id="mAcc" placeholder="账号">
+        <input type="text" id="mName" placeholder="姓名">
+        <input type="number" id="mBal" placeholder="充值">
+        <button class="btn btn-main" onclick="checkAuth(() => addMember())">开户/充值</button>
+        <table>
+            <thead><tr><th>账号</th><th>姓名</th><th>余额</th><th>操作</th></tr></thead>
+            <tbody id="memberList"></tbody>
+        </table>
     </div>
-  
-  
-    <div class="statistics">
-  
-  
-
-  
-    
-      <span id="busuanzi_container_site_pv" style="display: none">
-        总访问量 
-        <span id="busuanzi_value_site_pv"></span>
-         次
-      </span>
-    
-    
-      <span id="busuanzi_container_site_uv" style="display: none">
-        总访客数 
-        <span id="busuanzi_value_site_uv"></span>
-         人
-      </span>
-    
-    
-  
 </div>
 
-  
-  
-  
+<div id="customerView">
+    <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1)">
+        <h2 id="cust-name">-</h2>
+        <div id="cust-timer" class="timer-display">00:00:00</div>
+        <div id="cust-cost" class="cost-info">费用: ￥0.00</div>
+        <p id="cust-status" style="font-weight: bold;"></p>
+        <button class="refresh-btn" onclick="location.reload()">🔄 刷新当前状态</button>
+    </div>
 </div>
 
-  </footer>
+<div id="welcomeArea">
+    <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto;">
+        <h2>🎮 躺平电玩</h2>
+        <p>欢迎光临，请扫码桌位二维码开始游玩</p>
+        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+        <p style="font-size: 0.8rem; color:#999;">店长通道：</p>
+        <button class="btn btn-main" onclick="adminLogin()">管理登录</button>
+    </div>
+</div>
 
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+<script>
+    // --- 配置 ---
+    const MASTER_PASS = '8888'; // 【在此修改你的店长密码】
+    let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
 
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
+    // --- 数据持久化 ---
+    let tables = JSON.parse(localStorage.getItem('tp_tables')) || [{name: '1号桌', startTime: null, price: 15, mode: 'normal', limitMs: 0}];
+    let members = JSON.parse(localStorage.getItem('tp_members')) || {};
+    let currentTheme = localStorage.getItem('tp_theme') || 'light';
+    document.body.setAttribute('data-theme', currentTheme);
 
+    // --- 初始化判断 ---
+    const tidx = new URLSearchParams(window.location.search).get('t');
+    
+    function init() {
+        if (tidx !== null) {
+            // 顾客扫码进来的
+            document.getElementById('welcomeArea').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+            setInterval(updateCustomer, 1000);
+        } else if (isAdmin) {
+            // 已登录的管理页
+            showAdmin();
+        } else {
+            // 默认欢迎页
+            document.getElementById('welcomeArea').style.display = 'block';
+        }
+    }
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
+    function showAdmin() {
+        document.getElementById('welcomeArea').style.display = 'none';
+        document.getElementById('adminArea').style.display = 'block';
+        document.getElementById('memberArea').style.display = 'block';
+        render(); 
+        renderMembers();
+        setInterval(render, 1000);
+    }
 
+    function adminLogin() {
+        const p = prompt("请输入店长管理密码:");
+        if (p === MASTER_PASS) {
+            isAdmin = true;
+            sessionStorage.setItem('isLoggedIn', 'true');
+            showAdmin();
+        } else if (p !== null) {
+            alert("密码错误！");
+        }
+    }
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
-      }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        jQuery.ajax({
-          type: 'GET',
-          url: 'https://v1.hitokoto.cn/',
-          headers: {},
-          dataType: 'json',
-          success: function(result) {
-            var apiText;
-            if (result) {
-              var keys = 'hitokoto'.split(',');
-              if (result instanceof Array) {
-                result = result[0];
-              }
-              for (const k of keys) {
-                var value = result[k];
-                if (typeof value === 'string') {
-                  apiText = value;
-                  break;
-                } else if (value instanceof Object) {
-                  result = value;
+    function logout() {
+        sessionStorage.removeItem('isLoggedIn');
+        location.reload();
+    }
+
+    // 操作鉴权逻辑
+    function checkAuth(callback) {
+        if (!isAdmin) {
+            const p = prompt("敏感操作需验证店长密码:");
+            if (p === MASTER_PASS) callback();
+            else if (p !== null) alert("权限不足！");
+        } else {
+            callback();
+        }
+    }
+
+    function save() {
+        localStorage.setItem('tp_tables', JSON.stringify(tables));
+        localStorage.setItem('tp_members', JSON.stringify(members));
+        localStorage.setItem('tp_theme', currentTheme);
+    }
+
+    // --- 计费核心逻辑（严格保留缓冲功能） ---
+    function msToT(ms) {
+        let s = Math.floor(ms / 1000);
+        let h = Math.floor(s / 3600).toString().padStart(2, '0');
+        let m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+        let sec = (s % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${sec}`;
+    }
+
+    function calculate(t) {
+        if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "待机", css: "" };
+        const elapsed = Date.now() - t.startTime;
+        const buffer = 60000; // 1分钟缓冲
+
+        if (t.mode === 'normal') {
+            let cost = (elapsed / 3600000 * t.price).toFixed(2);
+            return { time: msToT(elapsed), cost: cost, color: "color-orange", status: "正在计费", css: "active-normal" };
+        } else {
+            let remain = t.limitMs - elapsed;
+            if (remain > 0) {
+                return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预付运行中", css: "active-prepay" };
+            } else {
+                let over = Math.abs(remain);
+                if (over < buffer) {
+                    let warn = buffer - over;
+                    return { time: "00:00:" + Math.floor(warn/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: "active-warn" };
+                } else {
+                    let billable = over - buffer;
+                    let cost = (billable / 3600000 * t.price).toFixed(2);
+                    return { time: "超时 " + msToT(billable), cost: cost, color: "color-red", status: "超时计费中", css: "active-over" };
                 }
-              }
             }
-            apiText ? typing(apiText) : typing(text);
-          },
-          error: function(xhr, status, error) {
-            if (error) {
-              console.error('Failed to request https://v1.hitokoto.cn/:', error);
+        }
+    }
+
+    // --- 界面渲染 ---
+    function render() {
+        if (!isAdmin || tidx !== null) return;
+        const grid = document.getElementById('tablesGrid');
+        const baseUrl = window.location.href.split('?')[0];
+        let html = '';
+        tables.forEach((t, i) => {
+            const res = calculate(t);
+            html += `
+                <div class="card ${res.css}">
+                    <div style="font-size:9px; color:#999; margin-bottom:5px;">${baseUrl}?t=${i}</div>
+                    <input style="border:none; background:transparent; font-weight:bold; font-size:1.1rem; color:var(--text)" value="${t.name}" onchange="tables[${i}].name=this.value;save()">
+                    <div class="timer-display ${res.color}">${res.time}</div>
+                    <div class="cost-info">费用: ￥${res.cost}</div>
+                    <div style="margin-bottom:10px; font-size:0.9rem;">
+                        价格: <input type="number" style="width:45px" value="${t.price}" onchange="tables[${i}].price=this.value;save()"> 元/h
+                    </div>
+                    ${!t.startTime ? 
+                        `<button class="btn btn-main" onclick="start(${i}, 'normal')">计时</button> 
+                         <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
+                        `<button class="btn btn-danger" style="width:100%" onclick="askCheckout(${i})">结账下机</button>`}
+                </div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    function updateCustomer() {
+        const t = tables[tidx];
+        if(!t) return;
+        const res = calculate(t);
+        document.getElementById('cust-name').innerText = t.name;
+        document.getElementById('cust-timer').innerText = res.time;
+        document.getElementById('cust-timer').className = "timer-display " + res.color;
+        document.getElementById('cust-cost').innerText = "当前费用: ￥" + res.cost;
+        document.getElementById('cust-status').innerText = res.status;
+        document.getElementById('cust-status').style.color = res.color === 'color-red' ? 'red' : 'var(--primary)';
+    }
+
+    // --- 操作函数 ---
+    function start(i, mode, ms = 0) {
+        tables[i].startTime = Date.now();
+        tables[i].mode = mode;
+        tables[i].limitMs = ms;
+        save(); render();
+    }
+
+    function askPrepay(i) {
+        const min = prompt("请输入预付分钟数:", "60");
+        if (min) start(i, 'prepay', min * 60000);
+    }
+
+    function askCheckout(i) {
+        // 结账下机必须通过鉴权
+        checkAuth(() => {
+            const res = calculate(tables[i]);
+            const acc = prompt(`应收金额: ￥${res.cost}\n请输入扣款会员账号 (如无则直接确定下机):`);
+            if (acc && members[acc]) {
+                members[acc].balance -= parseFloat(res.cost);
+                alert(`扣费成功！会员 ${members[acc].name} 剩余余额: ￥${members[acc].balance.toFixed(2)}`);
             }
-            typing(text);
-          }
-        })
-      
-    })(window, document);
-  </script>
+            tables[i].startTime = null;
+            save(); render(); renderMembers();
+        });
+    }
 
+    function addMember() {
+        const acc = document.getElementById('mAcc').value;
+        if (!acc) return;
+        members[acc] = { 
+            name: document.getElementById('mName').value || '匿名顾客', 
+            balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) 
+        };
+        save(); renderMembers();
+        alert("操作成功！");
+    }
 
+    function renderMembers() {
+        let html = '';
+        for (let a in members) {
+            html += `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td>
+            <td><button class="btn" onclick="checkAuth(()=>deleteMember('${a}'))">删</button></td></tr>`;
+        }
+        document.getElementById('memberList').innerHTML = html;
+    }
 
+    function deleteMember(a) {
+        if(confirm(`确定删除会员 ${a} 吗？`)) {
+            delete members[a]; save(); renderMembers();
+        }
+    }
 
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
+    function addTable() {
+        checkAuth(() => {
+            tables.push({name: (tables.length+1)+'号桌', startTime: null, price: 15, mode: 'normal', limitMs: 0});
+            save(); render();
+        });
+    }
 
+    function toggleTheme() {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', currentTheme);
+        save();
+    }
 
-
-
-  <script  src="/js/local-search.js" ></script>
-
-  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
-  </noscript>
+    init();
+</script>
 </body>
 </html>
