@@ -24,12 +24,14 @@
         .btn-danger { background: var(--red); color: white; }
         #adminArea, #memberArea { display: none; }
         #welcomeArea { text-align: center; padding: 50px 20px; }
-        #customerView { display: none; text-align: center; }
+        #customerView { display: none; text-align: center; position: relative; }
         .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         td, th { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
         #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
         .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; z-index: 10; }
+        /* 顾客端专用主题切换按钮 */
+        .cust-theme-btn { position: absolute; top: -10px; right: 0; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 10px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body data-theme="light">
@@ -61,7 +63,8 @@
 </div>
 
 <div id="customerView">
-    <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1)">
+    <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1); position: relative;">
+        <div class="cust-theme-btn" onclick="toggleTheme()">🌓 切换主题</div>
         <h2 id="cust-name">-</h2>
         <div id="cust-timer" class="timer-display">00:00:00</div>
         <div id="cust-cost" class="cost-info">费用: ￥0.00</div>
@@ -90,7 +93,7 @@
     let members = {};
     let currentTheme = localStorage.getItem('tp_theme') || 'light';
     let isEditing = false; 
-    let localTimestamp = 0; // 【修复并发】记录本地数据的最后同步时间戳
+    let localTimestamp = 0;
 
     const tidx = new URLSearchParams(window.location.search).get('t');
 
@@ -98,12 +101,8 @@
         if (isEditing) return; 
         showLoading(true);
         try {
-            // 加入随机参数 cache 防止浏览器拿到旧的缓存数据
             const res = await fetch(API_URL + "?nocache=" + Date.now());
             const data = await res.json();
-            
-            // 【修复并发核心逻辑】
-            // 只有当云端的时间戳比本地更新时，或者本地还没数据时，才覆盖本地变量
             if (!data.lastUpdated || data.lastUpdated > localTimestamp) {
                 tables = data.tables || [];
                 members = data.members || {};
@@ -118,25 +117,17 @@
     async function save() {
         showLoading(true);
         try {
-            // 1. 先去云端探一下，防止在点按钮的一瞬间别人先存了
             const checkRes = await fetch(API_URL + "?check=" + Date.now());
             const checkData = await checkRes.json();
             if (checkData.lastUpdated > localTimestamp) {
-                console.log("并发冲突：检测到更新，正在合并新数据...");
                 tables = checkData.tables || [];
                 members = checkData.members || {};
             }
-
-            // 2. 更新本地戳并上传全量数据
             localTimestamp = Date.now();
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    tables, 
-                    members, 
-                    lastUpdated: localTimestamp // 将时间戳存入云端
-                })
+                body: JSON.stringify({ tables, members, lastUpdated: localTimestamp })
             });
             localStorage.setItem('tp_theme', currentTheme);
         } catch (e) { alert("同步失败"); }
@@ -146,18 +137,18 @@
     function showLoading(show) { document.getElementById('syncStatus').style.display = show ? 'block' : 'none'; }
 
     async function init() {
+        document.body.setAttribute('data-theme', currentTheme); // 初始化主题
         await cloudFetch();
         if (tidx !== null) {
             document.getElementById('welcomeArea').style.display = 'none';
             document.getElementById('customerView').style.display = 'block';
             setInterval(updateCustomer, 1000);
-            setInterval(cloudFetch, 10000); // 顾客端每10秒刷一次云端
+            setInterval(cloudFetch, 10000);
         } else if (isAdmin) {
             showAdmin();
         } else {
             document.getElementById('welcomeArea').style.display = 'block';
         }
-        // 管理端每10秒自动从云端同步一次，防止多设备数据不统一
         setInterval(() => { if(isAdmin) cloudFetch(); }, 10000); 
     }
 
@@ -186,7 +177,7 @@
     }
 
     function msToT(ms) {
-        let s = Math.floor(ms / 1000);
+        let s = Math.floor(Math.abs(ms) / 1000);
         return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
     }
 
@@ -219,23 +210,13 @@
                     <span class="del-btn" onclick="deleteTable(${i})">×</span>
                     <div style="font-size:9px; color:#999; margin-bottom:5px;">${baseUrl}?t=${i}</div>
                     <input style="border:none; background:transparent; font-weight:bold; font-size:1.1rem; color:var(--text); width:80%;" 
-                           value="${t.name}" 
-                           onfocus="isEditing=true" 
-                           onblur="isEditing=false; tables[${i}].name=this.value; save()"
-                           oninput="tables[${i}].name=this.value"
-                           onchange="save()">
+                           value="${t.name}" onfocus="isEditing=true" onblur="isEditing=false; tables[${i}].name=this.value; save()" oninput="tables[${i}].name=this.value" onchange="save()">
                     <div class="timer-display ${res.color}">${res.time}</div>
                     <div class="cost-info">费用: ￥${res.cost}</div>
                     <div style="margin-bottom:10px; font-size:0.9rem;">
-                        价格: <input type="number" style="width:45px" value="${t.price}" 
-                                   onfocus="isEditing=true" 
-                                   onblur="isEditing=false; tables[${i}].price=this.value; save()"
-                                   oninput="tables[${i}].price=this.value"
-                                   onchange="save()"> 元/h
+                        价格: <input type="number" style="width:45px" value="${t.price}" onfocus="isEditing=true" onblur="isEditing=false; tables[${i}].price=this.value; save()" oninput="tables[${i}].price=this.value" onchange="save()"> 元/h
                     </div>
-                    ${!t.startTime ? 
-                        `<button class="btn btn-main" onclick="start(${i}, 'normal')">计时</button> 
-                         <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
+                    ${!t.startTime ? `<button class="btn btn-main" onclick="start(${i}, 'normal')">计时</button> <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
                         `<button class="btn btn-danger" style="width:100%" onclick="askCheckout(${i})">结账下机</button>`}
                 </div>`;
         });
@@ -255,13 +236,37 @@
 
     function start(i, mode, ms = 0) { tables[i].startTime = Date.now(); tables[i].mode = mode; tables[i].limitMs = ms; save(); render(); }
     function askPrepay(i) { const min = prompt("预付分钟数:", "60"); if (min) start(i, 'prepay', min * 60000); }
-    function askCheckout(i) { checkAuth(() => { const res = calculate(tables[i]); const acc = prompt(`应收: ￥${res.cost}\n扣款会员账号:`); if (acc && members[acc]) { members[acc].balance -= parseFloat(res.cost); alert(`成功！余: ￥${members[acc].balance.toFixed(2)}`); } tables[i].startTime = null; save(); render(); renderMembers(); }); }
+    
+    // 【修改核心：点击取消不停止计时】
+    function askCheckout(i) { 
+        checkAuth(() => { 
+            const res = calculate(tables[i]); 
+            const acc = prompt(`[${tables[i].name}] 正在结账\n应收: ￥${res.cost}\n请输入扣款会员账号 (不输入则手动收现):`, ""); 
+            
+            // 如果用户点击了“取消”，acc 的值为 null，此时直接 return，不做任何操作
+            if (acc === null) return; 
+
+            // 如果点击确定（无论输没输账号），都会继续往下走清除计费
+            if (acc !== "" && members[acc]) { 
+                members[acc].balance -= parseFloat(res.cost); 
+                alert(`扣款成功！会员余额: ￥${members[acc].balance.toFixed(2)}`); 
+            } else if (acc !== "") {
+                alert("未找到该会员账号，已记录为现金结账。");
+            }
+
+            tables[i].startTime = null; 
+            save(); 
+            render(); 
+            renderMembers(); 
+        }); 
+    }
+
     function addTable() { checkAuth(() => { tables.push({name: (tables.length+1)+'号桌', startTime: null, price: 15, mode: 'normal', limitMs: 0}); save(); render(); }); }
     function deleteTable(i) { checkAuth(() => { if (tables[i].startTime) return alert("计费中！"); if (confirm(`删除 [${tables[i].name}]？`)) { tables.splice(i, 1); save(); render(); } }); }
     function addMember() { const acc = document.getElementById('mAcc').value; if (!acc) return; members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); }
     function renderMembers() { let html = ''; for (let a in members) { html += `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" onclick="checkAuth(()=>deleteMember('${a}'))">删</button></td></tr>`; } document.getElementById('memberList').innerHTML = html; }
     function deleteMember(a) { if(confirm(`删除会员 ${a}？`)) { delete members[a]; save(); renderMembers(); } }
-    function toggleTheme() { currentTheme = currentTheme === 'light' ? 'dark' : 'light'; document.body.setAttribute('data-theme', currentTheme); save(); }
+    function toggleTheme() { currentTheme = currentTheme === 'light' ? 'dark' : 'light'; document.body.setAttribute('data-theme', currentTheme); localStorage.setItem('tp_theme', currentTheme); }
     init();
 </script>
 </body>
