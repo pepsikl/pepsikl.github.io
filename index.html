@@ -86,7 +86,7 @@
 <script>
     const BIN_ID = 'be0977dbf4d2692aa868';
     const API_URL = `https://api.npoint.io/${BIN_ID}`;
-    const MASTER_PASS = '8888';
+    const MASTER_PASS = '343434';
     
     let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
     let tables = [];
@@ -190,11 +190,11 @@
             return { time: msToT(elapsed), cost, color: "color-orange", status: "正在计费", css: "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
-            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预付运行中", css: "active-prepay" };
+            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预结计时中", css: "active-prepay" };
             let over = Math.abs(remain);
-            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: "active-warn" };
+            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 即将超时", css: "active-warn" };
             let cost = ((over - buffer) / 3600000 * t.price).toFixed(2);
-            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "超时计费中", css: "active-over" };
+            return { time: "已超时 " + msToT(over - buffer), cost, color: "color-red", status: "超时计费中", css: "active-over" };
         }
     }
 
