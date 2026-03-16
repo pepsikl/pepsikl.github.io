@@ -175,7 +175,22 @@
     }
 
     function removeNotify(i) { calls.splice(i, 1); save(); checkNewMessages(); }
-    function showQR(text) { document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`; document.getElementById('qrModal').style.display = 'block'; }
+    function showQR(text) {
+        // 生成二维码前再次强制剔除所有空格，确保万无一失
+        const cleanText = text.replace(/\s+/g, ""); 
+        const container = document.getElementById("qrcode");
+        container.innerHTML = ""; 
+        new QRCode(container, {
+            text: cleanText,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        document.getElementById("qrText").innerText = "券码：" + cleanText;
+        document.getElementById("qrModal").style.display = "block";
+    }
 
     function togglePause(i) {
         const t = tables[i]; if (!t.startTime) return;
@@ -267,9 +282,15 @@
 
     function start(i, mode, ms = 0) { tables[i].startTime = Date.now(); tables[i].mode = mode; tables[i].limitMs = ms; tables[i].pausedMs = 0; tables[i].isPaused = false; save(); render(); }
     function askPrepay(i) { const min = prompt("分钟:"); if(min) start(i, 'prepay', min*60000); }
-    function callService() { pushMsg("呼叫服务", "call"); }
-    function requestCoupon() { const code = prompt("输入券码:"); if(code) pushMsg(code, "coupon"); }
-    
+    function callService() { pushMsg("呼叫服务", "call"); } 
+    function requestCoupon() { 
+        const code = prompt("请输入或粘贴券码:"); 
+        if(code) {
+            // 发送前剔除所有空格
+            const cleanCode = code.replace(/\s+/g, "");
+            pushMsg(cleanCode, "coupon"); 
+        }
+    }
     function pushMsg(content, type) { 
         if(tidx===null) return; 
         const tableName = tables[tidx]?.name || "未知"; 
