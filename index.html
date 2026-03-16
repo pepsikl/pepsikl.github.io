@@ -116,7 +116,7 @@
     const MASTER_PASS = '3434';
     
     let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
-    let tables = [], members = {}, calls = [], faqs = [], localTimestamp = 0, lastCallCount = 0;
+    let tables = [], members = {}, calls = [], faqs = [], localTimestamp = 0, lastMaxCallTime = Date.now();
     let isEditing = false;
     const tidx = new URLSearchParams(window.location.search).get('t');
 
@@ -158,6 +158,9 @@
         if (!isAdmin || tidx !== null) return;
         const stack = document.getElementById('notifyStack');
         stack.innerHTML = '';
+        
+        let currentMaxTime = lastMaxCallTime;
+
         calls.forEach((msg, i) => {
             const div = document.createElement('div');
             div.className = `notify-item ${msg.type === 'coupon' ? 'coupon' : ''}`;
@@ -166,13 +169,19 @@
                 <div>${msg.type==='coupon'?`<button class="btn" style="padding:4px; margin-right:5px; background:white; color:var(--blue);" onclick="showQR('${msg.content}')">扫码</button>`:''}
                 <button class="btn" style="padding:4px; background:white; color:var(--red);" onclick="removeNotify(${i})">完成</button></div>`;
             stack.appendChild(div);
+
+            // 检查这条消息是否是“真的新消息”
+            if (msg.time > lastMaxCallTime) {
+                const ut = new SpeechSynthesisUtterance(msg.type==='coupon'?`叮咚！${msg.tableName}提交了券码`:`叮咚！${msg.tableName}在召唤你`);
+                ut.lang = 'zh-CN'; 
+                window.speechSynthesis.speak(ut);
+                
+                // 更新当前看到的最晚时间
+                if (msg.time > currentMaxTime) currentMaxTime = msg.time;
+            }
         });
-        if (calls.length > lastCallCount) {
-            const lastMsg = calls[calls.length-1];
-            const ut = new SpeechSynthesisUtterance(lastMsg.type==='coupon'?`叮咚！${lastMsg.tableName}提交了券码`:`叮咚！${lastMsg.tableName}在召唤你`);
-            ut.lang = 'zh-CN'; window.speechSynthesis.speak(ut);
-        }
-        lastCallCount = calls.length;
+
+        lastMaxCallTime = currentMaxTime;
     }
 
     function removeNotify(i) { calls.splice(i, 1); save(); checkNewMessages(); }
