@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>内卷不赢|适当躺平</title>
-    <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.8/tcb.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode_js@1.0.0/qrcode.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --blue: #54a0ff; --border: #eee; }
@@ -45,6 +44,7 @@
         #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
         .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; }
 
+        /* 自定义通用弹窗样式 */
         .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 50000; backdrop-filter: blur(5px); }
         .modal-content { background: var(--card); width: 85%; max-width: 320px; margin: 150px auto; padding: 25px; border-radius: 25px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid var(--border); }
         .modal-input { width: 90%; padding: 12px; margin: 15px 0; border: 2px solid var(--border); border-radius: 10px; font-size: 1rem; text-align: center; background: var(--bg); color: var(--text); }
@@ -55,7 +55,7 @@
 <body data-theme="light">
 
 <div id="notifyStack"></div>
-<div id="syncStatus">📡 云端同步中...</div>
+<div id="syncStatus">📡 同步中...</div>
 
 <div id="commonModal" class="custom-modal">
     <div class="modal-content">
@@ -71,7 +71,7 @@
 
 <div id="adminArea">
     <div class="header">
-        <h1>🎮 躺平电玩云管理</h1>
+        <h1>🎮 躺平电玩多工管理</h1>
         <div><button class="btn" onclick="toggleTheme()">🌓 主题</button> <button class="btn btn-danger" onclick="logout()">退出</button></div>
     </div>
     <div class="grid" id="tablesGrid"></div>
@@ -83,7 +83,7 @@
             <input type="text" id="mAcc" placeholder="账号" style="width:70px">
             <input type="text" id="mName" placeholder="姓名" style="width:70px">
             <input type="number" id="mBal" placeholder="充值" style="width:60px">
-            <button class="btn btn-main" onclick="checkAuth(() => addMember())">开户/充值</button>
+            <button class="btn btn-main" onclick="checkAuth(() => addMember())">开户</button>
             <table width="100%" style="margin-top:10px; font-size:0.8rem;">
                 <tbody id="memberList"></tbody>
             </table>
@@ -126,79 +126,20 @@
 
 <div id="welcomeArea" style="text-align:center; padding-top:100px;">
     <h2>🎮 躺平电玩</h2>
-    <p style="color:#888; font-size:0.9rem;">正在连接国内云服务器...</p>
-    <button class="btn btn-main" id="loginBtn" onclick="adminLogin()" style="display:none;">管理登录</button>
+    <button class="btn btn-main" onclick="adminLogin()">管理登录</button>
 </div>
 
 <script>
-    // --- 腾讯云配置 ---
-    const ENV_ID = 'tangping-game-pro-8e0bbg21759d24';
+    const BIN_ID = 'be0977dbf4d2692aa868';
+    const API_URL = `https://api.npoint.io/${BIN_ID}`;
     const MASTER_PASS = '3434';
     
-    // 初始化云开发
-    const app = tcb.init({ env: ENV_ID });
-    const db = app.database();
-
     let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
     let tables = [], members = {}, calls = [], faqs = [], localTimestamp = 0, lastMaxCallTime = Date.now();
     let isEditing = false;
     const tidx = new URLSearchParams(window.location.search).get('t');
 
-    // --- 云端核心逻辑 ---
-
-    // 替代 npoint 的云端拉取
-    async function cloudFetch() {
-        if (isEditing) return;
-        showLoading(true);
-        try {
-            // 获取数据库中 game_system 集合里 id 为 master_data 的文档
-            const res = await db.collection('game_system').doc('master_data').get();
-            if (res.data && res.data.length > 0) {
-                const data = res.data[0];
-                if (!data.lastUpdated || data.lastUpdated > localTimestamp) {
-                    tables = data.tables || [];
-                    members = data.members || {};
-                    calls = data.calls || [];
-                    faqs = data.faqs || [];
-                    localTimestamp = data.lastUpdated || 0;
-                    render();
-                    renderMembers();
-                    renderFaqs();
-                    checkNewMessages();
-                }
-            } else {
-                // 如果是第一次运行，初始化数据库文档
-                await db.collection('game_system').doc('master_data').set({
-                    tables: [], members: {}, calls: [], faqs: [], lastUpdated: Date.now()
-                });
-            }
-            document.getElementById('loginBtn').style.display = 'inline-block';
-        } catch (e) {
-            console.error("云端连接失败:", e);
-        }
-        showLoading(false);
-    }
-
-    // 替代 npoint 的云端保存
-    async function save() {
-        showLoading(true);
-        localTimestamp = Date.now();
-        try {
-            await db.collection('game_system').doc('master_data').update({
-                tables, members, calls, faqs, lastUpdated: localTimestamp
-            });
-        } catch (e) { 
-            console.error("同步失败", e);
-            // 如果 update 失败可能是文档不存在，尝试 set
-            await db.collection('game_system').doc('master_data').set({
-                tables, members, calls, faqs, lastUpdated: localTimestamp
-            });
-        }
-        showLoading(false);
-    }
-
-    // --- 业务逻辑 ---
-
+    // --- 通用弹窗核心逻辑 ---
     let currentConfirmAction = null;
     function openCommonModal(title, desc, placeholder, type, onConfirm) {
         document.getElementById('modalTitle').innerText = title;
@@ -211,6 +152,40 @@
     }
     function closeCommonModal() { document.getElementById('commonModal').style.display = 'none'; }
     document.getElementById('modalConfirmBtn').onclick = () => { if(currentConfirmAction) currentConfirmAction(document.getElementById('modalInput').value); };
+
+    async function cloudFetch() {
+        if (isEditing) return;
+        showLoading(true);
+        try {
+            const res = await fetch(API_URL + "?nocache=" + Date.now());
+            const data = await res.json();
+            if (!data.lastUpdated || data.lastUpdated > localTimestamp) {
+                tables = data.tables || [];
+                members = data.members || {};
+                calls = data.calls || [];
+                faqs = data.faqs || [];
+                localTimestamp = data.lastUpdated || 0;
+                render();
+                renderMembers();
+                renderFaqs();
+                checkNewMessages();
+            }
+        } catch (e) {}
+        showLoading(false);
+    }
+
+    async function save() {
+        showLoading(true);
+        localTimestamp = Date.now();
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tables, members, calls, faqs, lastUpdated: localTimestamp })
+            });
+        } catch (e) { alert("同步失败"); }
+        showLoading(false);
+    }
 
     function checkNewMessages() {
         if (!isAdmin || tidx !== null) return;
@@ -301,6 +276,7 @@
         }).join('');
     }
 
+    // 弹窗重写业务
     function adminLogin() {
         openCommonModal("管理登录", "请输入店长权限密码", "密码", "password", (val) => {
             if(val === MASTER_PASS) { isAdmin=true; sessionStorage.setItem('isLoggedIn','true'); location.reload(); }
@@ -326,7 +302,7 @@
         checkAuth(() => {
             const res = calculate(tables[i]);
             openCommonModal("结账确认", `[${tables[i].name}] 应付 ￥${res.cost}`, "会员号(留空现金)", "text", (acc) => {
-                if (acc !== "" && members[acc]) { members[acc].balance -= parseFloat(res.cost); alert("会员扣款成功，当前余额：￥" + members[acc].balance.toFixed(2)); }
+                if (acc !== "" && members[acc]) { members[acc].balance -= parseFloat(res.cost); alert("扣款成功"); }
                 tables[i].startTime = null; tables[i].isPaused = false; tables[i].pausedMs = 0;
                 save(); render(); renderMembers(); closeCommonModal();
             });
@@ -350,17 +326,7 @@
         calls.push({ tableName, content, type, time: Date.now(), timeStr: ts }); 
         save(); alert("已发送申请！"); 
     }
-    function addMember() { 
-        const acc = document.getElementById('mAcc').value; 
-        if (acc) { 
-            members[acc] = { 
-                name: document.getElementById('mName').value || '匿名', 
-                balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) 
-            }; 
-            save(); renderMembers(); 
-            document.getElementById('mAcc').value=''; document.getElementById('mName').value=''; document.getElementById('mBal').value='';
-        } 
-    }
+    function addMember() { const acc = document.getElementById('mAcc').value; if (acc) { members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); } }
     function renderMembers() { document.getElementById('memberList').innerHTML = Object.keys(members).map(a => `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" style="padding:2px 5px; font-size:10px;" onclick="delete members['${a}'];save();renderMembers()">删</button></td></tr>`).join(''); }
     function deleteTable(i) { if(confirm("删除该桌位？")){ tables.splice(i,1); save(); render(); } }
     function addTable() { tables.push({name: (tables.length+1)+'号桌', price: 15}); save(); render(); }
@@ -371,15 +337,8 @@
     function toggleTheme() { let t = document.body.getAttribute('data-theme')==='light'?'dark':'light'; document.body.setAttribute('data-theme', t); localStorage.setItem('tp_theme', t); }
     
     document.body.setAttribute('data-theme', localStorage.getItem('tp_theme') || 'light');
-    
-    // 初始化启动
     cloudFetch();
-
-    if(isAdmin) { 
-        document.getElementById('adminArea').style.display='block'; 
-        document.getElementById('welcomeArea').style.display='none';
-        setInterval(()=> {if(!isEditing) render()}, 1000); 
-    }
+    if(isAdmin) { document.getElementById('adminArea').style.display='block'; setInterval(()=> {if(!isEditing) render()}, 1000); }
     if(tidx!==null) { 
         document.getElementById('customerView').style.display='block'; 
         document.getElementById('welcomeArea').style.display='none'; 
@@ -392,7 +351,6 @@
             timerEl.className = 'timer-display ' + res.colorClass; statusEl.className = res.colorClass;
         }, 1000); 
     }
-    // 每 8 秒自动同步一次云端数据
     setInterval(cloudFetch, 8000);
 </script>
 </body>
