@@ -3,107 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>躺平电玩智能台卡计费管理</title>
+    <title>躺平电玩计费管理系统</title>
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --border: #eee; }
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --blue: #54a0ff; --border: #eee; }
         [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; }
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: var(--card); border-radius: 18px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; position: relative; }
+        
+        /* 状态颜色绑定 */
         .card.active-normal { border-color: var(--orange); }
         .card.active-prepay { border-color: var(--green); }
-        .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; }
+        .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; } /* 缓冲期闪烁 */
         .card.active-over { border-color: #000; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .card.paused { opacity: 0.6; border-style: dashed; border-color: #999; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        
         .timer-display { font-size: 2.2rem; font-family: monospace; font-weight: bold; margin: 10px 0; }
-        .color-orange { color: var(--orange); } .color-green { color: var(--green); } .color-red { color: var(--red); }
         .cost-info { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
         .btn { border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-main { background: var(--primary); color: white; }
         .btn-danger { background: var(--red); color: white; }
+        .btn-warn { background: var(--orange); color: white; }
         #adminArea, #memberArea, #faqAdminArea { display: none; }
-        #welcomeArea { text-align: center; padding: 50px 20px; }
-        #customerView { display: none; text-align: center; position: relative; }
+        #customerView { display: none; text-align: center; }
         .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
         .call-btn { background: #ff4757; color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 10px; }
-        .faq-btn { background: #54a0ff; color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 10px; }
-        #callNotify { position: fixed; top: 0; left: 0; right: 0; background: #ff4757; color: white; padding: 10px; text-align: center; z-index: 20000; font-weight: bold; display: none; cursor: pointer; }
-        #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
-        .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; z-index: 10; }
+        .coupon-btn { background: var(--blue); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 10px; }
         
-        /* FAQ 弹窗样式 */
-        #faqModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 30000; padding: 20px; box-sizing: border-box; }
-        .faq-content { background: var(--card); border-radius: 20px; max-width: 500px; margin: 40px auto; padding: 25px; max-height: 80vh; overflow-y: auto; text-align: left; }
-        .faq-item { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .faq-q { font-weight: bold; color: var(--primary); margin-bottom: 5px; }
-        .faq-a { color: var(--text); font-size: 0.95rem; }
+        #notifyStack { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; z-index: 20000; }
+        .notify-item { background: var(--red); color: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .notify-item.coupon { background: var(--blue); }
+        #qrModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 40000; text-align: center; padding-top: 100px; }
+        #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
+        .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; }
+        .faq-box { margin-top: 20px; text-align: left; background: var(--bg); padding: 15px; border-radius: 15px; }
+        .faq-item { margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        .faq-q { font-weight: bold; color: var(--primary); font-size: 0.9rem; }
+        .faq-a { font-size: 0.85rem; color: #666; }
+        .color-orange { color: var(--orange); } .color-green { color: var(--green); } .color-red { color: var(--red); }
     </style>
 </head>
 <body data-theme="light">
 
-<div id="callNotify" onclick="clearCalls()">🚨 <span id="callMsg"></span> (处理完成点击消除)</div>
+<div id="notifyStack"></div>
 <div id="syncStatus">📡 同步中...</div>
 
 <div id="adminArea">
     <div class="header">
         <h1>🎮 躺平电玩后台</h1>
-        <div>
-            <button class="btn" onclick="toggleTheme()">🌓 主题</button>
-            <button class="btn btn-danger" onclick="logout()">退出登录</button>
-        </div>
+        <div><button class="btn" onclick="toggleTheme()">🌓 主题</button> <button class="btn btn-danger" onclick="logout()">退出</button></div>
     </div>
     <div class="grid" id="tablesGrid"></div>
     <div style="text-align:center; margin:30px;"><button class="btn btn-main" onclick="addTable()">＋ 新增桌位</button></div>
 
-    <div id="memberArea" style="background:var(--card); padding:20px; border-radius:15px; margin-top:30px;">
-        <h3>👤 会员系统</h3>
-        <input type="text" id="mAcc" placeholder="账号">
-        <input type="text" id="mName" placeholder="姓名">
-        <input type="number" id="mBal" placeholder="充值">
-        <button class="btn btn-main" onclick="checkAuth(() => addMember())">开户/充值</button>
-        <table style="width:100%; margin-top:10px;">
-            <thead><tr style="text-align:left;"><th>账号</th><th>姓名</th><th>余额</th><th>操作</th></tr></thead>
-            <tbody id="memberList"></tbody>
-        </table>
-    </div>
-
-    <div id="faqAdminArea" style="background:var(--card); padding:20px; border-radius:15px; margin-top:30px;">
-        <h3>❓ 常见问题管理</h3>
-        <input type="text" id="faqQ" placeholder="输入问题 (如: WiFi密码)">
-        <input type="text" id="faqA" placeholder="输入答案 (如: 12345678)">
-        <button class="btn btn-main" onclick="checkAuth(() => addFAQ())">添加常见问题</button>
-        <div id="faqAdminList" style="margin-top:15px;"></div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div id="memberArea" class="card" style="display:block;">
+            <h3>👤 会员系统</h3>
+            <input type="text" id="mAcc" placeholder="账号" style="width:70px">
+            <input type="text" id="mName" placeholder="姓名" style="width:70px">
+            <input type="number" id="mBal" placeholder="充值" style="width:60px">
+            <button class="btn btn-main" onclick="checkAuth(() => addMember())">开户</button>
+            <table width="100%" style="margin-top:10px; font-size:0.8rem;">
+                <tbody id="memberList"></tbody>
+            </table>
+        </div>
+        <div id="faqAdminArea" class="card" style="display:block;">
+            <h3>❓ FAQ管理</h3>
+            <input type="text" id="faqQ" placeholder="问题" style="width:80%">
+            <textarea id="faqA" placeholder="回答" style="width:80%; margin-top:5px;"></textarea>
+            <button class="btn btn-main" onclick="addFaq()" style="margin-top:5px;">添加问答</button>
+            <div id="faqAdminList" style="margin-top:10px; font-size:0.8rem;"></div>
+        </div>
     </div>
 </div>
 
 <div id="customerView">
-    <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1); position: relative;">
-        <div style="position:absolute; top:-10px; right:0; cursor:pointer; font-size:12px;" onclick="toggleTheme()">🌓 切换主题</div>
+    <div style="background:var(--card); padding:30px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
         <h2 id="cust-name">-</h2>
         <div id="cust-timer" class="timer-display">00:00:00</div>
         <div id="cust-cost" class="cost-info">费用: ￥0.00</div>
         <p id="cust-status" style="font-weight: bold;"></p>
-        <button class="refresh-btn" onclick="location.reload()">🔄 刷新当前状态</button>
+        <button class="refresh-btn" onclick="location.reload()">🔄 刷新状态</button>
         <button class="call-btn" onclick="callService()">🔔 呼叫店员</button>
-        <button class="faq-btn" onclick="showFAQ()">❓ 常见问题</button>
+        <button class="coupon-btn" onclick="requestCoupon()">🎫 团购续时/结账</button>
+        <div class="faq-box">
+            <div style="font-weight:bold; margin-bottom:10px; border-left:4px solid var(--primary); padding-left:8px;">常见问题帮助</div>
+            <div id="custFaqList"></div>
+        </div>
     </div>
 </div>
 
-<div id="faqModal" onclick="this.style.display='none'">
-    <div class="faq-content" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0;">❓ 常见问题</h3>
-        <div id="faqList"></div>
-        <button class="btn btn-main" style="width:100%; margin-top:10px;" onclick="document.getElementById('faqModal').style.display='none'">我知道了</button>
+<div id="qrModal" onclick="this.style.display='none'">
+    <div style="background:white; padding:20px; display:inline-block; border-radius:15px;">
+        <img id="qrImg" src="" style="width:200px; height:200px;">
+        <p style="color:#333; margin-top:10px; font-weight:bold;">请扫码核销券码</p>
     </div>
 </div>
 
-<div id="welcomeArea">
-    <div style="background:var(--card); padding:40px; border-radius:30px; max-width:400px; margin:auto;">
-        <h2>🎮 躺平电玩</h2>
-        <p>欢迎光临，请扫码开始游玩</p>
-        <button class="btn btn-main" onclick="adminLogin()">管理登录</button>
-    </div>
+<div id="welcomeArea" style="text-align:center; padding-top:100px;">
+    <h2>🎮 躺平电玩</h2>
+    <button class="btn btn-main" onclick="adminLogin()">管理登录</button>
 </div>
 
 <script>
@@ -112,19 +114,12 @@
     const MASTER_PASS = '8888';
     
     let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
-    let tables = [];
-    let members = {};
-    let calls = []; 
-    let faqs = []; // 新增 FAQ 数组
-    let currentTheme = localStorage.getItem('tp_theme') || 'light';
-    let isEditing = false; 
-    let localTimestamp = 0;
-    let lastCallCount = 0; 
-
+    let tables = [], members = {}, calls = [], faqs = [], localTimestamp = 0, lastCallCount = 0;
+    let isEditing = false;
     const tidx = new URLSearchParams(window.location.search).get('t');
 
     async function cloudFetch() {
-        if (isEditing) return; 
+        if (isEditing) return;
         showLoading(true);
         try {
             const res = await fetch(API_URL + "?nocache=" + Date.now());
@@ -133,211 +128,170 @@
                 tables = data.tables || [];
                 members = data.members || {};
                 calls = data.calls || [];
-                faqs = data.faqs || []; // 同步 FAQ
+                faqs = data.faqs || [];
                 localTimestamp = data.lastUpdated || 0;
                 render();
                 renderMembers();
-                renderFAQAdmin();
-                checkNewCalls();
+                renderFaqs();
+                checkNewMessages();
             }
-        } catch (e) { console.error("读取失败"); }
+        } catch (e) {}
         showLoading(false);
     }
 
     async function save() {
         showLoading(true);
+        localTimestamp = Date.now();
         try {
-            localTimestamp = Date.now();
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tables, members, calls, faqs, lastUpdated: localTimestamp })
             });
-            localStorage.setItem('tp_theme', currentTheme);
         } catch (e) { alert("同步失败"); }
         showLoading(false);
     }
 
-    // FAQ 逻辑
-    function addFAQ() {
-        const q = document.getElementById('faqQ').value;
-        const a = document.getElementById('faqA').value;
-        if (!q || !a) return;
-        faqs.push({ q, a });
-        document.getElementById('faqQ').value = '';
-        document.getElementById('faqA').value = '';
-        save(); renderFAQAdmin();
-    }
-    function renderFAQAdmin() {
-        let html = '';
-        faqs.forEach((item, i) => {
-            html += `<div style="margin-top:5px; font-size:0.9rem;">
-                <b>${item.q}</b>: ${item.a} 
-                <button class="btn" style="padding:2px 5px; color:red;" onclick="deleteFAQ(${i})">删</button>
-            </div>`;
-        });
-        document.getElementById('faqAdminList').innerHTML = html;
-    }
-    function deleteFAQ(i) { if(confirm("删除此常见问题？")) { faqs.splice(i, 1); save(); renderFAQAdmin(); } }
-    function showFAQ() {
-        let html = '';
-        if (faqs.length === 0) html = '<p>暂无常见问题</p>';
-        faqs.forEach(item => {
-            html += `<div class="faq-item"><div class="faq-q">Q: ${item.q}</div><div class="faq-a">A: ${item.a}</div></div>`;
-        });
-        document.getElementById('faqList').innerHTML = html;
-        document.getElementById('faqModal').style.display = 'block';
-    }
-
-    function checkNewCalls() {
+    function checkNewMessages() {
         if (!isAdmin || tidx !== null) return;
-        if (calls.length > 0) {
-            const latest = calls[calls.length - 1];
-            document.getElementById('callNotify').style.display = 'block';
-            document.getElementById('callMsg').innerText = `${latest.tableName} 正在呼叫服务！`;
-            if (calls.length > lastCallCount) {
-                const utterance = new SpeechSynthesisUtterance(`叮咚！${latest.tableName}在召唤你`);
-                utterance.lang = 'zh-CN';
-                window.speechSynthesis.speak(utterance);
-            }
-        } else { document.getElementById('callNotify').style.display = 'none'; }
+        const stack = document.getElementById('notifyStack');
+        stack.innerHTML = '';
+        calls.forEach((msg, i) => {
+            const div = document.createElement('div');
+            div.className = `notify-item ${msg.type === 'coupon' ? 'coupon' : ''}`;
+            div.innerHTML = `<span><b>${msg.tableName}</b>: ${msg.content}</span>
+                <div>${msg.type==='coupon'?`<button class="btn" style="padding:4px; margin-right:5px; background:white; color:var(--blue);" onclick="showQR('${msg.content}')">扫码</button>`:''}
+                <button class="btn" style="padding:4px; background:white; color:var(--red);" onclick="removeNotify(${i})">完成</button></div>`;
+            stack.appendChild(div);
+        });
+        if (calls.length > lastCallCount) {
+            const msg = calls[calls.length-1];
+            const ut = new SpeechSynthesisUtterance(msg.type==='coupon'?`叮咚！${msg.tableName}提交了券码`:`叮咚！${msg.tableName}在召唤你`);
+            ut.lang = 'zh-CN'; window.speechSynthesis.speak(ut);
+        }
         lastCallCount = calls.length;
     }
+    function removeNotify(i) { calls.splice(i, 1); save(); checkNewMessages(); }
+    function showQR(text) { document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`; document.getElementById('qrModal').style.display = 'block'; }
 
-    function clearCalls() { calls = []; save(); document.getElementById('callNotify').style.display = 'none'; }
-    function callService() {
-        if (tidx === null) return;
-        const tableName = tables[tidx] ? tables[tidx].name : "未知桌位";
-        calls.push({ tableName, time: Date.now() });
-        save();
-        alert("已发送呼叫，店员马上就来！");
-    }
-
-    function showLoading(show) { document.getElementById('syncStatus').style.display = show ? 'block' : 'none'; }
-
-    async function init() {
-        document.body.setAttribute('data-theme', currentTheme);
-        await cloudFetch();
-        if (tidx !== null) {
-            document.getElementById('welcomeArea').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
-            setInterval(updateCustomer, 1000);
-        } else if (isAdmin) {
-            showAdmin();
-        } else {
-            document.getElementById('welcomeArea').style.display = 'block';
-        }
-        setInterval(() => { cloudFetch(); }, 10000); 
-    }
-
-    function showAdmin() {
-        document.getElementById('welcomeArea').style.display = 'none';
-        document.getElementById('adminArea').style.display = 'block';
-        document.getElementById('memberArea').style.display = 'block';
-        document.getElementById('faqAdminArea').style.display = 'block';
-        render(); renderMembers(); renderFAQAdmin();
-        setInterval(() => { if (!isEditing) render(); }, 1000); 
-    }
-
-    function adminLogin() {
-        const p = prompt("店长密码:");
-        if (p === MASTER_PASS) { 
-            isAdmin = true; 
-            sessionStorage.setItem('isLoggedIn', 'true'); 
-            showAdmin(); 
-        } else if (p !== null) alert("密码错误！");
-    }
-
-    function logout() { sessionStorage.removeItem('isLoggedIn'); location.reload(); }
-
-    function checkAuth(callback) {
-        if (!isAdmin) {
-            const p = prompt("验证店长密码:");
-            if (p === MASTER_PASS) callback();
-            else if (p !== null) alert("权限不足！");
-        } else callback();
-    }
-
-    function msToT(ms) {
-        let s = Math.floor(Math.abs(ms) / 1000);
-        return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${((s%60)).toString().padStart(2,'0')}`;
+    function togglePause(i) {
+        const t = tables[i]; if (!t.startTime) return;
+        if (!t.isPaused) { t.isPaused = true; t.lastPauseStart = Date.now(); }
+        else { t.pausedMs = (t.pausedMs || 0) + (Date.now() - t.lastPauseStart); t.isPaused = false; }
+        save(); render();
     }
 
     function calculate(t) {
-        if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "空闲中", css: "" };
-        const elapsed = Date.now() - t.startTime;
-        const buffer = 60000;
+        if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "待机", css: "" };
+        
+        let now = t.isPaused ? t.lastPauseStart : Date.now();
+        let elapsed = now - t.startTime - (t.pausedMs || 0);
+        let status = t.isPaused ? "暂停中" : "计费中";
+        let css = t.isPaused ? "paused" : "";
+
         if (t.mode === 'normal') {
             let cost = (elapsed / 3600000 * t.price).toFixed(2);
-            return { time: msToT(elapsed), cost, color: "color-orange", status: "计费中", css: "active-normal" };
+            return { time: msToT(elapsed), cost, color: t.isPaused?"":"color-orange", status, css: css || "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
-            if (remain > 0) return { time: msToT(remain), cost: "0.00", color: "color-green", status: "预结时间内", css: "active-prepay" };
+            // 1. 预付时间内
+            if (remain > 0) {
+                return { time: msToT(remain), cost: "0.00", color: t.isPaused?"":"color-green", status: status + "(预付)", css: css || "active-prepay" };
+            }
+            // 2. 缓冲期 (时间用尽后的60秒内)
             let over = Math.abs(remain);
-            if (over < buffer) return { time: "00:00:" + Math.floor((buffer-over)/1000).toString().padStart(2,'0'), cost: "0.00", color: "color-red", status: "⚠️ 即将超时", css: "active-warn" };
-            let cost = ((over - buffer) / 3600000 * t.price).toFixed(2);
-            return { time: "超时 " + msToT(over - buffer), cost, color: "color-red", status: "计费中", css: "active-over" };
+            const buffer = 60000;
+            if (over < buffer) {
+                return { 
+                    time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), 
+                    cost: "0.00", 
+                    color: "color-red", 
+                    status: "⚠️ 缓冲倒计时", 
+                    css: css || "active-warn"  // 触发 CSS 闪烁动画
+                };
+            }
+            // 3. 超时计费
+            let overCharged = over - buffer;
+            let cost = (overCharged / 3600000 * t.price).toFixed(2);
+            return { 
+                time: "超时 " + msToT(overCharged), 
+                cost, 
+                color: "color-red", 
+                status: "已超时", 
+                css: css || "active-over" 
+            };
         }
     }
 
     function render() {
-        if (!isAdmin || tidx !== null || isEditing) return; 
+        if (!isAdmin || tidx !== null || isEditing) return;
         const grid = document.getElementById('tablesGrid');
         const baseUrl = window.location.href.split('?')[0];
-        let html = '';
-        tables.forEach((t, i) => {
+        grid.innerHTML = tables.map((t, i) => {
             const res = calculate(t);
-            html += `
-                <div class="card ${res.css}">
-                    <span class="del-btn" onclick="deleteTable(${i})">×</span>
-                    <div style="font-size:9px; color:#999; margin-bottom:5px;">${baseUrl}?t=${i}</div>
-                    <input style="border:none; background:transparent; font-weight:bold; font-size:1.1rem; color:var(--text); width:80%;" 
-                           value="${t.name}" onfocus="isEditing=true" onblur="isEditing=false; tables[${i}].name=this.value; save()" oninput="tables[${i}].name=this.value" onchange="save()">
-                    <div class="timer-display ${res.color}">${res.time}</div>
-                    <div class="cost-info">费用: ￥${res.cost}</div>
-                    <div style="margin-bottom:10px; font-size:0.9rem;">
-                        价格: <input type="number" style="width:45px" value="${t.price}" onfocus="isEditing=true" onblur="isEditing=false; tables[${i}].price=this.value; save()" oninput="tables[${i}].price=this.value" onchange="save()"> 元/h
-                    </div>
-                    ${!t.startTime ? `<button class="btn btn-main" onclick="start(${i}, 'normal')">计时</button> <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
-                        `<button class="btn btn-danger" style="width:100%" onclick="askCheckout(${i})">结账下机</button>`}
-                </div>`;
-        });
-        grid.innerHTML = html;
+            return `<div class="card ${res.css}"><span class="del-btn" onclick="deleteTable(${i})">×</span>
+                <div style="font-size:9px; color:#999;">${baseUrl}?t=${i}</div>
+                <input style="border:none; background:transparent; font-weight:bold; font-size:1.1rem; width:80%; color:var(--text);" value="${t.name}" onfocus="isEditing=true" onblur="isEditing=false; tables[${i}].name=this.value; save()">
+                <div class="timer-display ${res.color}">${res.time}</div>
+                <div class="cost-info">￥${res.cost}</div>
+                <div style="font-size:0.9rem;">价格: <input type="number" style="width:40px" value="${t.price}" onblur="tables[${i}].price=this.value; save()"> 元/h</div>
+                ${!t.startTime ? `<button class="btn btn-main" onclick="start(${i},'normal')">计时</button> <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
+                `<div style="display:flex; gap:5px; margin-top:10px;"><button class="btn btn-warn" style="flex:1" onclick="togglePause(${i})">${t.isPaused?'恢复':'暂停'}</button><button class="btn btn-danger" style="flex:1" onclick="askCheckout(${i})">结账</button></div>`}</div>`;
+        }).join('');
     }
 
-    function updateCustomer() {
-        const t = tables[tidx]; if(!t) return;
-        const res = calculate(t);
-        document.getElementById('cust-name').innerText = t.name;
-        document.getElementById('cust-timer').innerText = res.time;
-        document.getElementById('cust-timer').className = "timer-display " + res.color;
-        document.getElementById('cust-cost').innerText = "待支付: ￥" + res.cost;
-        document.getElementById('cust-status').innerText = res.status;
-        document.getElementById('cust-status').style.color = res.color === 'color-red' ? 'red' : 'var(--primary)';
-    }
-
-    function start(i, mode, ms = 0) { tables[i].startTime = Date.now(); tables[i].mode = mode; tables[i].limitMs = ms; save(); render(); }
-    function askPrepay(i) { const min = prompt("预付分钟数:", "60"); if (min) start(i, 'prepay', min * 60000); }
-    function askCheckout(i) { 
-        checkAuth(() => { 
-            const res = calculate(tables[i]); 
-            const acc = prompt(`[${tables[i].name}] 正在结账\n应收: ￥${res.cost}\n请输入扣款会员账号 (空为现金):`, ""); 
-            if (acc === null) return; 
-            if (acc !== "" && members[acc]) { 
-                members[acc].balance -= parseFloat(res.cost); 
-                alert(`扣款成功！会员余额: ￥${members[acc].balance.toFixed(2)}`); 
+    function askCheckout(i) {
+        checkAuth(() => {
+            const res = calculate(tables[i]);
+            const acc = prompt(`[${tables[i].name}] 结账\n应收: ￥${res.cost}\n输入扣款账号 (空为现金):`, "");
+            if (acc === null) return;
+            if (acc !== "" && members[acc]) {
+                members[acc].balance -= parseFloat(res.cost);
+                alert(`扣款成功！余额: ￥${members[acc].balance.toFixed(2)}`);
             }
-            tables[i].startTime = null; save(); render(); renderMembers(); 
-        }); 
+            tables[i].startTime = null; 
+            tables[i].isPaused = false; 
+            tables[i].pausedMs = 0;
+            save(); render(); renderMembers();
+        });
     }
 
-    function addTable() { checkAuth(() => { tables.push({name: (tables.length+1)+'号桌', startTime: null, price: 15, mode: 'normal', limitMs: 0}); save(); render(); }); }
-    function deleteTable(i) { checkAuth(() => { if (tables[i].startTime) return alert("计费中！"); if (confirm(`删除 [${tables[i].name}]？`)) { tables.splice(i, 1); save(); render(); } }); }
-    function addMember() { const acc = document.getElementById('mAcc').value; if (!acc) return; members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); }
-    function renderMembers() { let html = ''; for (let a in members) { html += `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" onclick="checkAuth(()=>deleteMember('${a}'))">删</button></td></tr>`; } document.getElementById('memberList').innerHTML = html; }
-    function deleteMember(a) { if(confirm(`删除会员 ${a}？`)) { delete members[a]; save(); renderMembers(); } }
-    function toggleTheme() { currentTheme = currentTheme === 'light' ? 'dark' : 'light'; document.body.setAttribute('data-theme', currentTheme); localStorage.setItem('tp_theme', currentTheme); }
-    init();
+    function renderFaqs() {
+        const adminList = document.getElementById('faqAdminList');
+        const custList = document.getElementById('custFaqList');
+        if(adminList) adminList.innerHTML = faqs.map((f, i) => `<div><b>Q: ${f.q}</b> <button class="btn" style="padding:2px 5px; font-size:10px;" onclick="faqs.splice(${i},1);save();renderFaqs()">删</button></div>`).join('');
+        if(custList) custList.innerHTML = faqs.map(f => `<div class="faq-item"><div class="faq-q">Q: ${f.q}</div><div class="faq-a">A: ${f.a}</div></div>`).join('');
+    }
+    function addFaq() { const q=document.getElementById('faqQ').value, a=document.getElementById('faqA').value; if(q && a){ faqs.push({q,a}); document.getElementById('faqQ').value=''; document.getElementById('faqA').value=''; save(); renderFaqs(); } }
+
+    function start(i, mode, ms = 0) { tables[i].startTime = Date.now(); tables[i].mode = mode; tables[i].limitMs = ms; tables[i].pausedMs = 0; tables[i].isPaused = false; save(); render(); }
+    function askPrepay(i) { const min = prompt("分钟:"); if(min) start(i, 'prepay', min*60000); }
+    function callService() { pushMsg("呼叫服务", "call"); }
+    function requestCoupon() { const code = prompt("输入券码:"); if(code) pushMsg(code, "coupon"); }
+    function pushMsg(content, type) { if(tidx===null) return; const tableName = tables[tidx]?.name || "未知"; calls.push({ tableName, content, type, time: Date.now() }); save(); alert("已发送申请！"); }
+    function addMember() { const acc = document.getElementById('mAcc').value; if (acc) { members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); } }
+    function renderMembers() { document.getElementById('memberList').innerHTML = Object.keys(members).map(a => `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" style="padding:2px 5px; font-size:10px;" onclick="delete members['${a}'];save();renderMembers()">删</button></td></tr>`).join(''); }
+    function deleteTable(i) { if(confirm("删除该桌位？")){ tables.splice(i,1); save(); render(); } }
+    function addTable() { tables.push({name: (tables.length+1)+'号桌', price: 15}); save(); render(); }
+    function adminLogin() { if(prompt("密码")===MASTER_PASS){ isAdmin=true; sessionStorage.setItem('isLoggedIn','true'); location.reload(); }}
+    function logout() { sessionStorage.clear(); location.reload(); }
+    function showLoading(s) { document.getElementById('syncStatus').style.display = s?'block':'none'; }
+    function msToT(ms) { let s = Math.floor(Math.abs(ms) / 1000); return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+    function checkAuth(cb) { if(isAdmin) cb(); else {if(prompt("店长密码")===MASTER_PASS) cb(); else alert("权限不足");} }
+    function toggleTheme() { let t = document.body.getAttribute('data-theme')==='light'?'dark':'light'; document.body.setAttribute('data-theme', t); localStorage.setItem('tp_theme', t); }
+    
+    document.body.setAttribute('data-theme', localStorage.getItem('tp_theme') || 'light');
+    cloudFetch();
+    if(isAdmin) { 
+        document.getElementById('adminArea').style.display='block'; 
+        setInterval(()=> {if(!isEditing) render()}, 1000); 
+    }
+    if(tidx!==null) { 
+        document.getElementById('customerView').style.display='block'; 
+        document.getElementById('welcomeArea').style.display='none'; 
+        setInterval(() => { const t = tables[tidx]; if(!t) return; const res = calculate(t); document.getElementById('cust-name').innerText = t.name; document.getElementById('cust-timer').innerText = res.time; document.getElementById('cust-cost').innerText = "费用: ￥"+res.cost; document.getElementById('cust-status').innerText = res.status; document.getElementById('cust-status').style.color = res.color === 'color-red' ? 'red' : 'var(--primary)'; }, 1000); 
+    }
+    setInterval(cloudFetch, 8000);
 </script>
 </body>
 </html>
