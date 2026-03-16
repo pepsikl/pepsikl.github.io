@@ -247,7 +247,7 @@
             let over = Math.abs(remain);
             const buffer = 60000;
             if (over < buffer) {
-                return { time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), cost: "0.00", colorClass: "color-red", status: "⚠️ 缓冲倒计时", css: css || "active-warn" };
+                return { time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), cost: "0.00", colorClass: "color-red", status: "⚠️ 即将超时", css: css || "active-warn" };
             }
             let overCharged = over - buffer;
             let cost = (overCharged / 3600000 * t.price).toFixed(2);
