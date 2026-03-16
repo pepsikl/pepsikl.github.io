@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>内卷不赢|适当躺平</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode_js@1.0.0/qrcode.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --blue: #54a0ff; --border: #eee; }
         [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
@@ -98,9 +99,9 @@
 </div>
 
 <div id="qrModal" onclick="this.style.display='none'">
-    <div style="background:white; padding:20px; display:inline-block; border-radius:15px;">
-        <img id="qrImg" src="" style="width:200px; height:200px;">
-        <p style="color:#333; margin-top:10px; font-weight:bold;">请扫码核销券码</p>
+    <div style="background:white; padding:20px; display:inline-block; border-radius:15px; vertical-align:middle; margin-top: 100px;">
+        <div id="qrcode"></div> <p id="qrText" style="color:#333; margin-top:10px; font-weight:bold;"></p>
+        <p style="color:#999; font-size:12px;">点击任意位置关闭</p>
     </div>
 </div>
 
@@ -176,10 +177,15 @@
 
     function removeNotify(i) { calls.splice(i, 1); save(); checkNewMessages(); }
     function showQR(text) {
-        // 生成二维码前再次强制剔除所有空格，确保万无一失
+        // 1. 强制剔除所有空格
         const cleanText = text.replace(/\s+/g, ""); 
+        
+        // 2. 找到容器并清空旧码
         const container = document.getElementById("qrcode");
+        if (!container) return; // 防错处理
         container.innerHTML = ""; 
+        
+        // 3. 调用 QRCode 库生成新码
         new QRCode(container, {
             text: cleanText,
             width: 200,
@@ -188,6 +194,8 @@
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
+        
+        // 4. 更新文字显示并弹出
         document.getElementById("qrText").innerText = "券码：" + cleanText;
         document.getElementById("qrModal").style.display = "block";
     }
