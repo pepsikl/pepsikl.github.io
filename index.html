@@ -11,16 +11,12 @@
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: var(--card); border-radius: 18px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; position: relative; }
-        
-        /* 状态颜色绑定 */
         .card.active-normal { border-color: var(--orange); }
         .card.active-prepay { border-color: var(--green); }
         .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; }
         .card.active-over { border-color: #000; }
         .card.paused { opacity: 0.6; border-style: dashed; border-color: #999; }
-        
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        
         .timer-display { font-size: 2.2rem; font-family: monospace; font-weight: bold; margin: 10px 0; }
         .cost-info { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
         .btn { border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
@@ -28,27 +24,21 @@
         .btn-danger { background: var(--red); color: white; }
         .btn-warn { background: var(--orange); color: white; }
         .btn-adjust { background: #636e72; color: white; font-size: 0.8rem; padding: 5px 10px; }
-        
         #adminArea, #memberArea, #faqAdminArea { display: none; }
         #customerView { display: none; text-align: center; }
         .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
         .call-btn { background: #ff4757; color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 10px; }
         .coupon-btn { background: var(--blue); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 10px; }
-        
         #notifyStack { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; z-index: 20000; }
         .notify-item { background: var(--red); color: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .notify-item.coupon { background: var(--blue); }
-        
         .faq-box { margin-top: 20px; text-align: left; background: var(--bg); padding: 15px; border-radius: 15px; }
         .faq-item { margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
         .faq-q { font-weight: bold; color: var(--primary); font-size: 0.9rem; }
         .faq-a { font-size: 0.85rem; color: #666; }
-        
-        /* 颜色类名辅助 */
         .color-orange { color: var(--orange) !important; } 
         .color-green { color: var(--green) !important; } 
         .color-red { color: var(--red) !important; }
-        
         #qrModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 40000; text-align: center; padding-top: 100px; }
         #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
         .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; }
@@ -180,13 +170,7 @@
         }
         lastCallCount = calls.length;
     }
-        if (calls.length > lastCallCount) {
-            const msg = calls[calls.length-1];
-            const ut = new SpeechSynthesisUtterance(msg.type==='coupon'?`叮咚！${msg.tableName}提交了券码`:`叮咚！${msg.tableName}在召唤你`);
-            ut.lang = 'zh-CN'; window.speechSynthesis.speak(ut);
-        }
-        lastCallCount = calls.length;
-    }
+
     function removeNotify(i) { calls.splice(i, 1); save(); checkNewMessages(); }
     function showQR(text) { document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`; document.getElementById('qrModal').style.display = 'block'; }
 
@@ -282,22 +266,17 @@
     function askPrepay(i) { const min = prompt("分钟:"); if(min) start(i, 'prepay', min*60000); }
     function callService() { pushMsg("呼叫服务", "call"); }
     function requestCoupon() { const code = prompt("输入券码:"); if(code) pushMsg(code, "coupon"); }
+    
     function pushMsg(content, type) { 
         if(tidx===null) return; 
         const tableName = tables[tidx]?.name || "未知"; 
         const d = new Date();
         const ts = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-        
-        calls.push({ 
-            tableName, 
-            content, 
-            type, 
-            time: Date.now(),
-            timeStr: ts 
-        }); 
+        calls.push({ tableName, content, type, time: Date.now(), timeStr: ts }); 
         save(); 
         alert("已发送申请！"); 
     }
+
     function addMember() { const acc = document.getElementById('mAcc').value; if (acc) { members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); } }
     function renderMembers() { document.getElementById('memberList').innerHTML = Object.keys(members).map(a => `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" style="padding:2px 5px; font-size:10px;" onclick="delete members['${a}'];save();renderMembers()">删</button></td></tr>`).join(''); }
     function deleteTable(i) { if(confirm("删除该桌位？")){ tables.splice(i,1); save(); render(); } }
@@ -324,13 +303,10 @@
             const res = calculate(t); 
             const timerEl = document.getElementById('cust-timer');
             const statusEl = document.getElementById('cust-status');
-            
             document.getElementById('cust-name').innerText = t.name; 
             timerEl.innerText = res.time; 
             document.getElementById('cust-cost').innerText = "待支付: ￥"+res.cost; 
             statusEl.innerText = res.status; 
-            
-            // 修复：同步颜色类名到顾客端
             timerEl.className = 'timer-display ' + res.colorClass;
             statusEl.className = res.colorClass;
         }, 1000); 
