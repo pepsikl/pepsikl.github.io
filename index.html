@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>躺平电玩计费管理系统</title>
+    <title>内卷不赢|适当躺平</title>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #2d3436; --primary: #6c5ce7; --orange: #ff9f43; --green: #10ac84; --red: #ee5253; --blue: #54a0ff; --border: #eee; }
         [data-theme='dark'] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f2f5; --border: #444; }
@@ -61,7 +61,7 @@
 
 <div id="adminArea">
     <div class="header">
-        <h1>🎮 躺平电玩后台</h1>
+        <h1>🎮 躺平电玩多工管理</h1>
         <div><button class="btn" onclick="toggleTheme()">🌓 主题</button> <button class="btn btn-danger" onclick="logout()">退出</button></div>
     </div>
     <div class="grid" id="tablesGrid"></div>
@@ -92,7 +92,7 @@
     <div style="background:var(--card); padding:30px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
         <h2 id="cust-name">-</h2>
         <div id="cust-timer" class="timer-display">00:00:00</div>
-        <div id="cust-cost" class="cost-info">费用: ￥0.00</div>
+        <div id="cust-cost" class="cost-info">待支付: ￥0.00</div>
         <p id="cust-status" style="font-weight: bold;"></p>
         <button class="refresh-btn" onclick="location.reload()">🔄 刷新状态</button>
         <button class="call-btn" onclick="callService()">🔔 呼叫店员</button>
@@ -119,7 +119,7 @@
 <script>
     const BIN_ID = 'be0977dbf4d2692aa868';
     const API_URL = `https://api.npoint.io/${BIN_ID}`;
-    const MASTER_PASS = '8888';
+    const MASTER_PASS = '3434';
     
     let isAdmin = sessionStorage.getItem('isLoggedIn') === 'true';
     let tables = [], members = {}, calls = [], faqs = [], localTimestamp = 0, lastCallCount = 0;
