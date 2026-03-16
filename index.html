@@ -12,6 +12,7 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: var(--card); border-radius: 18px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; position: relative; }
         
+        /* 状态颜色绑定 */
         .card.active-normal { border-color: var(--orange); }
         .card.active-prepay { border-color: var(--green); }
         .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; }
@@ -37,14 +38,20 @@
         #notifyStack { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; z-index: 20000; }
         .notify-item { background: var(--red); color: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .notify-item.coupon { background: var(--blue); }
-        #qrModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 40000; text-align: center; padding-top: 100px; }
-        #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
-        .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; }
+        
         .faq-box { margin-top: 20px; text-align: left; background: var(--bg); padding: 15px; border-radius: 15px; }
         .faq-item { margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
         .faq-q { font-weight: bold; color: var(--primary); font-size: 0.9rem; }
         .faq-a { font-size: 0.85rem; color: #666; }
-        .color-orange { color: var(--orange); } .color-green { color: var(--green); } .color-red { color: var(--red); }
+        
+        /* 颜色类名辅助 */
+        .color-orange { color: var(--orange) !important; } 
+        .color-green { color: var(--green) !important; } 
+        .color-red { color: var(--red) !important; }
+        
+        #qrModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 40000; text-align: center; padding-top: 100px; }
+        #syncStatus { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
+        .del-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #ccc; font-size: 18px; }
     </style>
 </head>
 <body data-theme="light">
@@ -185,19 +192,15 @@
     function adjustTime(i) {
         const t = tables[i];
         if (!t.startTime) return;
-        const mins = prompt("调整计费时间（单位：分钟）\n输入正数加时间，负数减时间\n例如：输入 10 代表增加 10 分钟", "0");
+        const mins = prompt("调整计费时间（单位：分钟）\n输入正数加时间，负数减时间", "0");
         if (mins === null || mins === "" || isNaN(mins)) return;
         const ms = parseFloat(mins) * 60000;
-        // 调整逻辑：通过移动起始时间来增减已用时长
-        // 输入 10，相当于起始时间提前 10 分钟，已用时间变长
         t.startTime -= ms;
-        save();
-        render();
+        save(); render();
     }
 
     function calculate(t) {
-        if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "待机", css: "" };
-        
+        if (!t.startTime) return { time: "00:00:00", cost: "0.00", colorClass: "", status: "待机", css: "" };
         let now = t.isPaused ? t.lastPauseStart : Date.now();
         let elapsed = now - t.startTime - (t.pausedMs || 0);
         let status = t.isPaused ? "暂停中" : "计费中";
@@ -205,20 +208,20 @@
 
         if (t.mode === 'normal') {
             let cost = (elapsed / 3600000 * t.price).toFixed(2);
-            return { time: msToT(elapsed), cost, color: t.isPaused?"":"color-orange", status, css: css || "active-normal" };
+            return { time: msToT(elapsed), cost, colorClass: t.isPaused?"":"color-orange", status, css: css || "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
             if (remain > 0) {
-                return { time: msToT(remain), cost: "0.00", color: t.isPaused?"":"color-green", status: status + "(预付)", css: css || "active-prepay" };
+                return { time: msToT(remain), cost: "0.00", colorClass: t.isPaused?"":"color-green", status: status + "(预付)", css: css || "active-prepay" };
             }
             let over = Math.abs(remain);
             const buffer = 60000;
             if (over < buffer) {
-                return { time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: css || "active-warn" };
+                return { time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), cost: "0.00", colorClass: "color-red", status: "⚠️ 缓冲倒计时", css: css || "active-warn" };
             }
             let overCharged = over - buffer;
             let cost = (overCharged / 3600000 * t.price).toFixed(2);
-            return { time: "超时 " + msToT(overCharged), cost, color: "color-red", status: "已超时", css: css || "active-over" };
+            return { time: "超时 " + msToT(overCharged), cost, colorClass: "color-red", status: "已超时", css: css || "active-over" };
         }
     }
 
@@ -231,7 +234,7 @@
             return `<div class="card ${res.css}"><span class="del-btn" onclick="deleteTable(${i})">×</span>
                 <div style="font-size:9px; color:#999;">${baseUrl}?t=${i}</div>
                 <input style="border:none; background:transparent; font-weight:bold; font-size:1.1rem; width:80%; color:var(--text);" value="${t.name}" onfocus="isEditing=true" onblur="isEditing=false; tables[${i}].name=this.value; save()">
-                <div class="timer-display ${res.color}">${res.time}</div>
+                <div class="timer-display ${res.colorClass}">${res.time}</div>
                 <div class="cost-info">￥${res.cost}</div>
                 <div style="font-size:0.9rem;">价格: <input type="number" style="width:40px" value="${t.price}" onblur="tables[${i}].price=this.value; save()"> 元/h</div>
                 ${!t.startTime ? `<button class="btn btn-main" onclick="start(${i},'normal')">计时</button> <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
@@ -292,7 +295,22 @@
     if(tidx!==null) { 
         document.getElementById('customerView').style.display='block'; 
         document.getElementById('welcomeArea').style.display='none'; 
-        setInterval(() => { const t = tables[tidx]; if(!t) return; const res = calculate(t); document.getElementById('cust-name').innerText = t.name; document.getElementById('cust-timer').innerText = res.time; document.getElementById('cust-cost').innerText = "费用: ￥"+res.cost; document.getElementById('cust-status').innerText = res.status; document.getElementById('cust-status').style.color = res.color === 'color-red' ? 'red' : 'var(--primary)'; }, 1000); 
+        setInterval(() => { 
+            const t = tables[tidx]; 
+            if(!t) return; 
+            const res = calculate(t); 
+            const timerEl = document.getElementById('cust-timer');
+            const statusEl = document.getElementById('cust-status');
+            
+            document.getElementById('cust-name').innerText = t.name; 
+            timerEl.innerText = res.time; 
+            document.getElementById('cust-cost').innerText = "费用: ￥"+res.cost; 
+            statusEl.innerText = res.status; 
+            
+            // 修复：同步颜色类名到顾客端
+            timerEl.className = 'timer-display ' + res.colorClass;
+            statusEl.className = res.colorClass;
+        }, 1000); 
     }
     setInterval(cloudFetch, 8000);
 </script>
