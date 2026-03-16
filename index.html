@@ -79,7 +79,11 @@
 </div>
 
 <div id="customerView">
+    <div style="text-align: right; max-width: 400px; margin: 0 auto 10px;">
+        <button class="btn" onclick="toggleTheme()" style="background:transparent; font-size:1.2rem;">🌓</button>
+    </div>
     <div style="background:var(--card); padding:30px; border-radius:30px; max-width:400px; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+        <h2 id="cust-name">-</h2>
         <h2 id="cust-name">-</h2>
         <div id="cust-timer" class="timer-display">00:00:00</div>
         <div id="cust-cost" class="cost-info">待支付: ￥0.00</div>
