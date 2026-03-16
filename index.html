@@ -12,10 +12,9 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: var(--card); border-radius: 18px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; position: relative; }
         
-        /* 状态颜色绑定 */
         .card.active-normal { border-color: var(--orange); }
         .card.active-prepay { border-color: var(--green); }
-        .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; } /* 缓冲期闪烁 */
+        .card.active-warn { border-color: var(--red); animation: pulse 1s infinite; }
         .card.active-over { border-color: #000; }
         .card.paused { opacity: 0.6; border-style: dashed; border-color: #999; }
         
@@ -27,6 +26,8 @@
         .btn-main { background: var(--primary); color: white; }
         .btn-danger { background: var(--red); color: white; }
         .btn-warn { background: var(--orange); color: white; }
+        .btn-adjust { background: #636e72; color: white; font-size: 0.8rem; padding: 5px 10px; }
+        
         #adminArea, #memberArea, #faqAdminArea { display: none; }
         #customerView { display: none; text-align: center; }
         .refresh-btn { background: var(--primary); color: white; padding: 15px; border-radius: 30px; width: 100%; border: none; font-size: 1.1rem; margin-top: 20px; }
@@ -181,6 +182,19 @@
         save(); render();
     }
 
+    function adjustTime(i) {
+        const t = tables[i];
+        if (!t.startTime) return;
+        const mins = prompt("调整计费时间（单位：分钟）\n输入正数加时间，负数减时间\n例如：输入 10 代表增加 10 分钟", "0");
+        if (mins === null || mins === "" || isNaN(mins)) return;
+        const ms = parseFloat(mins) * 60000;
+        // 调整逻辑：通过移动起始时间来增减已用时长
+        // 输入 10，相当于起始时间提前 10 分钟，已用时间变长
+        t.startTime -= ms;
+        save();
+        render();
+    }
+
     function calculate(t) {
         if (!t.startTime) return { time: "00:00:00", cost: "0.00", color: "", status: "待机", css: "" };
         
@@ -194,32 +208,17 @@
             return { time: msToT(elapsed), cost, color: t.isPaused?"":"color-orange", status, css: css || "active-normal" };
         } else {
             let remain = t.limitMs - elapsed;
-            // 1. 预付时间内
             if (remain > 0) {
                 return { time: msToT(remain), cost: "0.00", color: t.isPaused?"":"color-green", status: status + "(预付)", css: css || "active-prepay" };
             }
-            // 2. 缓冲期 (时间用尽后的60秒内)
             let over = Math.abs(remain);
             const buffer = 60000;
             if (over < buffer) {
-                return { 
-                    time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), 
-                    cost: "0.00", 
-                    color: "color-red", 
-                    status: "⚠️ 缓冲倒计时", 
-                    css: css || "active-warn"  // 触发 CSS 闪烁动画
-                };
+                return { time: "00:00:" + Math.floor((buffer - over) / 1000).toString().padStart(2, '0'), cost: "0.00", color: "color-red", status: "⚠️ 缓冲倒计时", css: css || "active-warn" };
             }
-            // 3. 超时计费
             let overCharged = over - buffer;
             let cost = (overCharged / 3600000 * t.price).toFixed(2);
-            return { 
-                time: "超时 " + msToT(overCharged), 
-                cost, 
-                color: "color-red", 
-                status: "已超时", 
-                css: css || "active-over" 
-            };
+            return { time: "超时 " + msToT(overCharged), cost, color: "color-red", status: "已超时", css: css || "active-over" };
         }
     }
 
@@ -236,7 +235,11 @@
                 <div class="cost-info">￥${res.cost}</div>
                 <div style="font-size:0.9rem;">价格: <input type="number" style="width:40px" value="${t.price}" onblur="tables[${i}].price=this.value; save()"> 元/h</div>
                 ${!t.startTime ? `<button class="btn btn-main" onclick="start(${i},'normal')">计时</button> <button class="btn btn-main" onclick="askPrepay(${i})">预付</button>` : 
-                `<div style="display:flex; gap:5px; margin-top:10px;"><button class="btn btn-warn" style="flex:1" onclick="togglePause(${i})">${t.isPaused?'恢复':'暂停'}</button><button class="btn btn-danger" style="flex:1" onclick="askCheckout(${i})">结账</button></div>`}</div>`;
+                `<div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                    <button class="btn btn-warn" style="flex:1" onclick="togglePause(${i})">${t.isPaused?'恢复':'暂停'}</button>
+                    <button class="btn btn-danger" style="flex:1" onclick="askCheckout(${i})">结账</button>
+                    <button class="btn btn-adjust" style="width:100%; margin-top:5px;" onclick="adjustTime(${i})">⚙️ 调整时间</button>
+                </div>`}</div>`;
         }).join('');
     }
 
