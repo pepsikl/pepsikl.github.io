@@ -160,18 +160,21 @@
         showLoading(false);
     }
 
-    function checkNewMessages() {
-        if (!isAdmin || tidx !== null) return;
-        const stack = document.getElementById('notifyStack');
-        stack.innerHTML = '';
-        calls.forEach((msg, i) => {
-            const div = document.createElement('div');
-            div.className = `notify-item ${msg.type === 'coupon' ? 'coupon' : ''}`;
-            div.innerHTML = `<span><b>${msg.tableName}</b>: ${msg.content}</span>
-                <div>${msg.type==='coupon'?`<button class="btn" style="padding:4px; margin-right:5px; background:white; color:var(--blue);" onclick="showQR('${msg.content}')">扫码</button>`:''}
-                <button class="btn" style="padding:4px; background:white; color:var(--red);" onclick="removeNotify(${i})">完成</button></div>`;
-            stack.appendChild(div);
-        });
+function checkNewMessages() {
+    if (!isAdmin || tidx !== null) return;
+    const stack = document.getElementById('notifyStack');
+    stack.innerHTML = '';
+    calls.forEach((msg, i) => {
+        const div = document.createElement('div');
+        div.className = `notify-item ${msg.type === 'coupon' ? 'coupon' : ''}`;
+        // 修改点：在 tableName 前面加上了 [msg.timeStr]
+        div.innerHTML = `<span><small style="opacity:0.8;margin-right:5px;">[${msg.timeStr || '新'}]</small><b>${msg.tableName}</b>: ${msg.content}</span>
+            <div>${msg.type==='coupon'?`<button class="btn" style="padding:4px; margin-right:5px; background:white; color:var(--blue);" onclick="showQR('${msg.content}')">扫码</button>`:''}
+            <button class="btn" style="padding:4px; background:white; color:var(--red);" onclick="removeNotify(${i})">完成</button></div>`;
+        stack.appendChild(div);
+    });
+    // ... 语音播报逻辑保持不变 ...
+}
         if (calls.length > lastCallCount) {
             const msg = calls[calls.length-1];
             const ut = new SpeechSynthesisUtterance(msg.type==='coupon'?`叮咚！${msg.tableName}提交了券码`:`叮咚！${msg.tableName}在召唤你`);
@@ -274,7 +277,23 @@
     function askPrepay(i) { const min = prompt("分钟:"); if(min) start(i, 'prepay', min*60000); }
     function callService() { pushMsg("呼叫服务", "call"); }
     function requestCoupon() { const code = prompt("输入券码:"); if(code) pushMsg(code, "coupon"); }
-    function pushMsg(content, type) { if(tidx===null) return; const tableName = tables[tidx]?.name || "未知"; calls.push({ tableName, content, type, time: Date.now() }); save(); alert("已发送申请！"); }
+    function pushMsg(content, type) { 
+    if(tidx===null) return; 
+    const tableName = tables[tidx]?.name || "未知"; 
+    // 获取当前的小时和分钟
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    
+    calls.push({ 
+        tableName, 
+        content, 
+        type, 
+        time: Date.now(),
+        timeStr: timeStr // 新增：保存格式化后的时间，如 "14:30"
+    }); 
+    save(); 
+    alert("已发送申请！"); 
+}
     function addMember() { const acc = document.getElementById('mAcc').value; if (acc) { members[acc] = { name: document.getElementById('mName').value || '匿名', balance: (members[acc]?.balance || 0) + (parseFloat(document.getElementById('mBal').value) || 0) }; save(); renderMembers(); } }
     function renderMembers() { document.getElementById('memberList').innerHTML = Object.keys(members).map(a => `<tr><td>${a}</td><td>${members[a].name}</td><td>￥${members[a].balance.toFixed(2)}</td><td><button class="btn" style="padding:2px 5px; font-size:10px;" onclick="delete members['${a}'];save();renderMembers()">删</button></td></tr>`).join(''); }
     function deleteTable(i) { if(confirm("删除该桌位？")){ tables.splice(i,1); save(); render(); } }
